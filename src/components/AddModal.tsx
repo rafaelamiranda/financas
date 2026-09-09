@@ -295,67 +295,24 @@ export default function AddModal({ isOpen, onClose }: AddModalProps) {
                 </div>
 
                 <div>
-                  <label className="text-sm text-gray-400 block mb-3">Recorrência</label>
-                  <div className="space-y-2">
-                    <button
-                      type="button"
-                      onClick={() => {
-                        setRecurrence('none');
+                  <label className="text-sm text-gray-400 block mb-2">Recorrência</label>
+                  <select
+                    value={recurrence}
+                    onChange={(e) => {
+                      const value = e.target.value as RecurrenceType;
+                      setRecurrence(value);
+                      if (value !== 'fixed_until') {
                         setRecurrenceEndDate('');
-                      }}
-                      className={`w-full text-left py-2 px-3 rounded-lg transition ${
-                        recurrence === 'none'
-                          ? 'bg-entrada/30 border border-entrada text-white'
-                          : 'bg-card-hover/30 border border-card-hover/50 text-gray-300 hover:border-gray-400'
-                      }`}
-                    >
-                      Nenhuma (lançamento único)
-                    </button>
-                    <button
-                      type="button"
-                      onClick={() => setRecurrence('daily')}
-                      className={`w-full text-left py-2 px-3 rounded-lg transition ${
-                        recurrence === 'daily'
-                          ? 'bg-entrada/30 border border-entrada text-white'
-                          : 'bg-card-hover/30 border border-card-hover/50 text-gray-300 hover:border-gray-400'
-                      }`}
-                    >
-                      Diário
-                    </button>
-                    <button
-                      type="button"
-                      onClick={() => setRecurrence('weekly')}
-                      className={`w-full text-left py-2 px-3 rounded-lg transition ${
-                        recurrence === 'weekly'
-                          ? 'bg-entrada/30 border border-entrada text-white'
-                          : 'bg-card-hover/30 border border-card-hover/50 text-gray-300 hover:border-gray-400'
-                      }`}
-                    >
-                      Semanal
-                    </button>
-                    <button
-                      type="button"
-                      onClick={() => setRecurrence('monthly')}
-                      className={`w-full text-left py-2 px-3 rounded-lg transition ${
-                        recurrence === 'monthly'
-                          ? 'bg-entrada/30 border border-entrada text-white'
-                          : 'bg-card-hover/30 border border-card-hover/50 text-gray-300 hover:border-gray-400'
-                      }`}
-                    >
-                      Mensal
-                    </button>
-                    <button
-                      type="button"
-                      onClick={() => setRecurrence('fixed_until')}
-                      className={`w-full text-left py-2 px-3 rounded-lg transition ${
-                        recurrence === 'fixed_until'
-                          ? 'bg-entrada/30 border border-entrada text-white'
-                          : 'bg-card-hover/30 border border-card-hover/50 text-gray-300 hover:border-gray-400'
-                      }`}
-                    >
-                      Até uma data
-                    </button>
-                  </div>
+                      }
+                    }}
+                    className="w-full bg-card-hover border border-card-hover/50 rounded-lg px-4 py-2 text-white focus:outline-none focus:border-entrada"
+                  >
+                    <option value="none">Nenhuma (lançamento único)</option>
+                    <option value="daily">Diário</option>
+                    <option value="weekly">Semanal</option>
+                    <option value="monthly">Mensal</option>
+                    <option value="fixed_until">Até uma data</option>
+                  </select>
 
                   {recurrence === 'fixed_until' && (
                     <div className="mt-3">
