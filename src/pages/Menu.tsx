@@ -1,16 +1,31 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Moon, Sun, Download, Trash2, Info } from 'lucide-react';
 import { useFinancasStore } from '../store';
 
+const getInitialTheme = (): 'light' | 'dark' | 'system' => {
+  try {
+    return (localStorage.getItem('theme') as 'light' | 'dark' | 'system') || 'system';
+  } catch {
+    return 'system';
+  }
+};
+
+const applyTheme = (theme: 'light' | 'dark' | 'system') => {
+  const root = document.documentElement;
+  if (theme === 'system') {
+    root.removeAttribute('data-theme');
+  } else {
+    root.setAttribute('data-theme', theme);
+  }
+};
+
 export default function Menu() {
   const [showClearConfirm, setShowClearConfirm] = useState(false);
-  const [theme, setTheme] = useState<'light' | 'dark' | 'system'>(() => {
-    try {
-      return (localStorage.getItem('theme') as 'light' | 'dark' | 'system') || 'system';
-    } catch {
-      return 'system';
-    }
-  });
+  const [theme, setTheme] = useState<'light' | 'dark' | 'system'>(getInitialTheme);
+
+  useEffect(() => {
+    applyTheme(theme);
+  }, []);
 
   const transactions = useFinancasStore((state) => state.transactions);
   const tags = useFinancasStore((state) => state.tags);
@@ -19,15 +34,10 @@ export default function Menu() {
     setTheme(newTheme);
     try {
       localStorage.setItem('theme', newTheme);
-      const root = document.documentElement;
-      if (newTheme === 'system') {
-        root.removeAttribute('data-theme');
-      } else {
-        root.setAttribute('data-theme', newTheme);
-      }
     } catch {
       // ignore localStorage errors
     }
+    applyTheme(newTheme);
   };
 
   const handleExportData = () => {
