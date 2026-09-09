@@ -5,31 +5,37 @@ App mobile-first de controle financeiro pessoal, estilo "planilha de saldo diár
 ## Stack
 
 - **React 19 + TypeScript** — Vite como bundler
-- **Tailwind CSS v4** — tema escuro nativo, config via `@theme` em `src/index.css` (sem `tailwind.config.js`/PostCSS — usa o plugin `@tailwindcss/vite`)
+- **Tailwind CSS v4** — tema claro/escuro, config via `@theme` em `src/index.css` (sem `tailwind.config.js`/PostCSS — usa o plugin `@tailwindcss/vite`)
 - **React Router** — navegação entre telas
-- **Zustand** — estado global
+- **Zustand** — estado global com persistência localStorage
 - **Framer Motion** — animações (sidebar, bottom sheet do modal)
 - **lucide-react** — ícones
-- **Persistência atual**: `localStorage` (offline-first, ver seção Supabase abaixo para o plano de migração)
+- **Supabase JS** — cliente para sync opcional com backend
+- **Persistência**: `localStorage` (offline-first) com sync assíncrono para Supabase (opcional)
 
 ## Estrutura
 
 ```
 src/
   components/
-    Layout.tsx        # shell com sidebar + bottom nav mobile
-    AddModal.tsx       # fluxo de adicionar lançamento (bottom sheet)
-    ui/sidebar.tsx      # sidebar colapsável (hover-expand no desktop)
+    Layout.tsx             # shell com sidebar + bottom nav mobile; pin/unpin sidebar
+    AddModal.tsx           # fluxo de adicionar lançamento; select dropdown para recorrência
+    EditTransactionModal.tsx # edição de lançamentos existentes
+    AddTagModal.tsx        # criação de tags com color picker
+    EditTagModal.tsx       # edição de tags com color picker
+    ui/sidebar.tsx         # sidebar colapsável (hover-expand no desktop); respeta fixed state
   pages/
-    Saldos.tsx          # home — tabela de dias x categorias + saldo (heatmap)
-    Totais.tsx          # cards de performance/economizado/custo de vida/diário médio
-    Tags.tsx            # CRUD de tags com cor customizável
-    Horizonte.tsx        # stub — projeção de saldo futuro
-    Menu.tsx             # stub — configurações
-  store/index.ts        # Zustand store (transactions, tags) + persistência localStorage
-  types/index.ts         # Transaction, Tag, tipos e constantes de categoria
+    Saldos.tsx            # home — tabela de dias x categorias + saldo (heatmap)
+    Totais.tsx            # cards de performance/economizado/custo de vida/diário médio
+    Tags.tsx              # CRUD de tags com dropdown menu (editar/deletar); color picker
+    Horizonte.tsx         # projeção de 6 meses de saldo com color-coded status
+    Menu.tsx              # configurações: tema (claro/escuro/sistema), export JSON, delete com confirmação
+  store/index.ts          # Zustand store (transactions, tags) + persistência localStorage; sync Supabase
+  lib/supabase.ts         # cliente Supabase com CRUD functions; graceful fallback
+  types/index.ts          # Transaction, Tag, tipos e constantes de categoria
   utils.ts                # formatação de moeda/data, cálculo de saldo diário e totais mensais
-  lib/utils.ts             # helper `cn` (clsx + tailwind-merge)
+  lib/utils.ts            # helper `cn` (clsx + tailwind-merge)
+  index.css               # Tailwind v4 com @theme; temas claro/escuro com media queries
 ```
 
 ## Rodando localmente
@@ -64,6 +70,24 @@ Tag { id, name, color }
 
 ---
 
+## Implementações recentes (v1.0)
+
+### UI/UX
+- [x] **Recorrência como select dropdown** — Substituição dos botões por select nativo (mais compacto; opções: Nenhuma, Diário, Semanal, Mensal, Até uma data)
+- [x] **Tag editing** — Modal para editar nome e cor das tags com color picker (preset + custom color)
+- [x] **Fixed sidebar toggle** — Botão pin/unpin para fixar a sidebar (persistido em localStorage)
+- [x] **Tema claro/escuro** — Radio buttons no Menu para selecionar Light/Dark/System; aplicado antes do render (sem flash)
+
+### Páginas
+- [x] **Menu (Settings)** — Tema, Export de dados (JSON), Delete com confirmação de 2 passos, Info do app
+- [x] **Horizonte** — Projeção de 6 meses com balance por mês, performance, categoria breakdown (entrada/saída/diário/economia/cartão); color-coded (red/yellow/green)
+
+### Backend
+- [x] **Supabase integration** — Cliente configurado com CRUD functions (insert, update, delete); localStorage fallback se desabilitado
+- [x] **Theme persistence** — Leitura de tema no mount (main.tsx) antes do render; CSS support com @media queries e [data-theme] attributes
+
+---
+
 ## Banco de dados: Supabase (planejado)
 
 A persistência hoje é só `localStorage` (por navegador, sem sync). O plano é migrar para **Supabase** (Postgres + Auth + Row Level Security), permitindo sync multi-dispositivo.
@@ -83,12 +107,12 @@ Ver detalhes de risco em `SECURITY.md`.
 
 ### Funcionalidades do escopo original ainda não implementadas
 - [ ] **Edição/exclusão de lançamentos** — células da tabela de saldos ainda não são clicáveis para abrir o lançamento
-- [ ] **Recorrência de lançamentos** — campo existe no modelo de dados, mas não há UI nem projeção automática nos dias futuros
+- [x] **Recorrência de lançamentos** — UI select dropdown com tipos: Nenhuma, Diário, Semanal, Mensal, Até uma data; projeção automática para "horizonte"
 - [ ] **Seleção de tags no lançamento** — modal de adicionar não tem campo de tags ainda
-- [ ] **Tela "horizonte"** — projeção de saldo futuro baseada em recorrências/médias (hoje é só um stub)
-- [ ] **Tela "menu"** — configurações (hoje é só um stub)
+- [x] **Tela "horizonte"** — projeção de saldo futuro para os próximos 6 meses baseada em recorrências; mostra performance e categoria breakdown
+- [x] **Tela "menu"** — configurações com tema (claro/escuro/sistema), export de dados, delete com confirmação, info do app
 - [ ] **Múltiplos meses lado a lado** na tela de saldos (desktop) — hoje mostra só um mês por vez
-- [ ] **Edição/exclusão de tags** — botão de menu (⋮) existe mas só deleta, sem editar nome/cor
+- [x] **Edição/exclusão de tags** — modal de edição para nome e cor (com color picker), dropdown menu em cada tag
 - [ ] **Reordenar tags** (botão shuffle mencionado no escopo) — não implementado
 - [ ] **Date picker customizado** (dd/mm/aa) — hoje usa `<input type="date">` nativo do navegador
 
