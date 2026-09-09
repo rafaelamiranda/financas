@@ -1,8 +1,8 @@
 import { useState } from 'react';
 import { AnimatePresence, motion } from 'framer-motion';
-import { ArrowDownLeft, ArrowUpRight, ShoppingBag, PiggyBank, CreditCard, X, ChevronLeft, Delete } from 'lucide-react';
+import { ArrowDownLeft, ArrowUpRight, ShoppingBag, PiggyBank, CreditCard, X, ChevronLeft, Delete, Plus, Check } from 'lucide-react';
 import type { TransactionType } from '../types';
-import { CATEGORY_COLORS, CATEGORY_LABELS } from '../types';
+import { CATEGORY_COLORS, CATEGORY_LABELS, TAG_COLOR_PRESETS } from '../types';
 import { useFinancasStore } from '../store';
 import { formatCurrency } from '../utils';
 
@@ -35,8 +35,31 @@ export default function AddModal({ isOpen, onClose }: AddModalProps) {
   const [amount, setAmount] = useState('0');
   const [description, setDescription] = useState('');
   const [date, setDate] = useState(new Date().toISOString().split('T')[0]);
+  const [selectedTagIds, setSelectedTagIds] = useState<string[]>([]);
+  const [showNewTagForm, setShowNewTagForm] = useState(false);
+  const [newTagName, setNewTagName] = useState('');
+  const [newTagColor, setNewTagColor] = useState(TAG_COLOR_PRESETS[0]);
 
-  const { addTransaction } = useFinancasStore();
+  const { addTransaction, tags, addTag } = useFinancasStore();
+
+  const toggleTag = (tagId: string) => {
+    setSelectedTagIds((prev) =>
+      prev.includes(tagId) ? prev.filter((id) => id !== tagId) : [...prev, tagId]
+    );
+  };
+
+  const handleCreateTag = () => {
+    const name = newTagName.trim();
+    if (!name) return;
+    addTag({ name, color: newTagColor });
+    const created = useFinancasStore.getState().tags.at(-1);
+    if (created) {
+      setSelectedTagIds((prev) => [...prev, created.id]);
+    }
+    setNewTagName('');
+    setNewTagColor(TAG_COLOR_PRESETS[0]);
+    setShowNewTagForm(false);
+  };
 
   const handleSelectType = (type: TransactionType) => {
     setSelectedType(type);
@@ -66,12 +89,14 @@ export default function AddModal({ isOpen, onClose }: AddModalProps) {
         description: description || CATEGORY_LABELS[selectedType],
         date: new Date(date),
         recurrence: 'none',
-        tag_ids: [],
+        tag_ids: selectedTagIds,
       });
       onClose();
       setAmount('0');
       setDescription('');
       setDate(new Date().toISOString().split('T')[0]);
+      setSelectedTagIds([]);
+      setShowNewTagForm(false);
       setStep('select');
     }
   };
@@ -201,6 +226,76 @@ export default function AddModal({ isOpen, onClose }: AddModalProps) {
                     onChange={(e) => setDate(e.target.value)}
                     className="w-full bg-card-hover border border-card-hover/50 rounded-lg px-4 py-2 text-white focus:outline-none focus:border-entrada"
                   />
+                </div>
+
+                <div>
+                  <label className="text-sm text-gray-400 block mb-2">Tags (opcional)</label>
+                  <div className="flex flex-wrap gap-2">
+                    {tags.map((tag) => {
+                      const selected = selectedTagIds.includes(tag.id);
+                      return (
+                        <button
+                          key={tag.id}
+                          type="button"
+                          onClick={() => toggleTag(tag.id)}
+                          className="flex items-center gap-1.5 px-3 py-1.5 rounded-full text-sm font-medium border transition"
+                          style={
+                            selected
+                              ? { backgroundColor: tag.color + '30', borderColor: tag.color, color: tag.color }
+                              : { backgroundColor: 'transparent', borderColor: 'rgba(255,255,255,0.15)', color: '#9ca3af' }
+                          }
+                        >
+                          {selected && <Check className="h-3.5 w-3.5" />}
+                          {tag.name}
+                        </button>
+                      );
+                    })}
+
+                    <button
+                      type="button"
+                      onClick={() => setShowNewTagForm((v) => !v)}
+                      className="flex items-center gap-1.5 px-3 py-1.5 rounded-full text-sm font-medium border border-dashed border-gray-500 text-gray-400 hover:text-white hover:border-gray-300 transition"
+                    >
+                      <Plus className="h-3.5 w-3.5" />
+                      nova tag
+                    </button>
+                  </div>
+
+                  {showNewTagForm && (
+                    <div className="mt-3 p-3 rounded-lg bg-card-hover/50 space-y-3">
+                      <input
+                        type="text"
+                        value={newTagName}
+                        onChange={(e) => setNewTagName(e.target.value)}
+                        placeholder="Nome da tag"
+                        autoFocus
+                        className="w-full bg-card-hover border border-card-hover/50 rounded-lg px-3 py-2 text-sm text-white placeholder-gray-500 focus:outline-none focus:border-entrada"
+                      />
+                      <div className="flex items-center gap-2 flex-wrap">
+                        {TAG_COLOR_PRESETS.map((color) => (
+                          <button
+                            key={color}
+                            type="button"
+                            onClick={() => setNewTagColor(color)}
+                            className="w-7 h-7 rounded-full transition"
+                            style={{
+                              backgroundColor: color,
+                              outline: newTagColor === color ? '2px solid white' : 'none',
+                              outlineOffset: '2px',
+                            }}
+                          />
+                        ))}
+                      </div>
+                      <button
+                        type="button"
+                        onClick={handleCreateTag}
+                        disabled={!newTagName.trim()}
+                        className="w-full py-2 rounded-lg text-sm font-bold text-bg-primary bg-entrada hover:bg-entrada/90 transition disabled:opacity-50 disabled:cursor-not-allowed"
+                      >
+                        Criar e selecionar
+                      </button>
+                    </div>
+                  )}
                 </div>
 
                 <button

@@ -1,12 +1,13 @@
 import { useState } from 'react';
 import { useFinancasStore } from '../store';
 import { formatCurrency, getMonthName } from '../utils';
+import { TAG_COLOR_PRESETS } from '../types';
 
 export default function Tags() {
   const [currentDate, setCurrentDate] = useState(new Date());
   const [showAddTag, setShowAddTag] = useState(false);
   const [newTagName, setNewTagName] = useState('');
-  const [newTagColor, setNewTagColor] = useState('#7ED957');
+  const [newTagColor, setNewTagColor] = useState(TAG_COLOR_PRESETS[0]);
   const [searchQuery, setSearchQuery] = useState('');
 
   const tags = useFinancasStore((state) => state.tags);
@@ -29,7 +30,7 @@ export default function Tags() {
         color: newTagColor,
       });
       setNewTagName('');
-      setNewTagColor('#7ED957');
+      setNewTagColor(TAG_COLOR_PRESETS[0]);
       setShowAddTag(false);
     }
   };
@@ -52,17 +53,6 @@ export default function Tags() {
   const filteredTags = tags.filter((tag) =>
     tag.name.toLowerCase().includes(searchQuery.toLowerCase())
   );
-
-  const COLOR_PRESETS = [
-    '#7ED957', // Green
-    '#FF6B6B', // Red
-    '#FF69B4', // Pink
-    '#ADFF2F', // Lime
-    '#9D4EDD', // Purple
-    '#00BCD4', // Cyan
-    '#FFA500', // Orange
-    '#4ECDC4', // Teal
-  ];
 
   return (
     <div className="w-full h-full flex flex-col">
@@ -184,7 +174,7 @@ export default function Tags() {
             <div>
               <label className="text-sm text-gray-400 block mb-3">Cor</label>
               <div className="grid grid-cols-4 gap-3">
-                {COLOR_PRESETS.map((color) => (
+                {TAG_COLOR_PRESETS.map((color) => (
                   <button
                     key={color}
                     onClick={() => setNewTagColor(color)}

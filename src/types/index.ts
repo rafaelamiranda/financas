@@ -44,3 +44,14 @@ export const CATEGORY_LABELS: Record<TransactionType, string> = {
   economia: 'Economia',
   cartao: 'Cartão',
 };
+
+export const TAG_COLOR_PRESETS = [
+  '#7ED957', // Green
+  '#FF6B6B', // Red
+  '#FF69B4', // Pink
+  '#ADFF2F', // Lime
+  '#9D4EDD', // Purple
+  '#00BCD4', // Cyan
+  '#FFA500', // Orange
+  '#4ECDC4', // Teal
+];
