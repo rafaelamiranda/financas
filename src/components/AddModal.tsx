@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { AnimatePresence, motion } from 'framer-motion';
-import { ArrowDownLeft, ArrowUpRight, ShoppingBag, PiggyBank, CreditCard, X, ChevronLeft, Delete, Plus, Check } from 'lucide-react';
+import { ArrowDownLeft, ArrowUpRight, ShoppingBag, PiggyBank, CreditCard, X, ChevronLeft, Plus, Check } from 'lucide-react';
 import type { TransactionType, RecurrenceType } from '../types';
 import { CATEGORY_COLORS, CATEGORY_LABELS, TAG_COLOR_PRESETS } from '../types';
 import { useFinancasStore } from '../store';
@@ -68,18 +68,16 @@ export default function AddModal({ isOpen, onClose }: AddModalProps) {
     setStep('form');
   };
 
-  const handleAddAmount = (digit: string) => {
-    if (digit === 'backspace') {
-      setAmount(amount.slice(0, -1) || '0');
-    } else {
-      setAmount(amount === '0' ? digit : amount + digit);
+  const handleAmountChange = (value: string) => {
+    const cleaned = value.replace(/[^\d.]/g, '');
+    const parts = cleaned.split('.');
+    if (parts.length > 2) {
+      return;
     }
-  };
-
-  const handleAddDecimal = () => {
-    if (!amount.includes('.')) {
-      setAmount(amount + '.');
+    if (parts[1] && parts[1].length > 2) {
+      return;
     }
+    setAmount(cleaned || '0');
   };
 
   const handleSubmit = () => {
@@ -190,44 +188,19 @@ export default function AddModal({ isOpen, onClose }: AddModalProps) {
                   Adicionar {CATEGORY_LABELS[selectedType]}
                 </h2>
 
-                <div className="bg-card-hover/50 rounded-lg p-4 text-center">
-                  <p className="text-sm text-gray-400 mb-2">Valor</p>
-                  <p
-                    className="text-5xl font-bold"
-                    style={{ color: CATEGORY_COLORS[selectedType] }}
-                  >
+                <div>
+                  <label className="text-sm text-gray-400 block mb-2">Valor</label>
+                  <input
+                    type="text"
+                    value={amount}
+                    onChange={(e) => handleAmountChange(e.target.value)}
+                    placeholder="0,00"
+                    inputMode="decimal"
+                    className="w-full bg-card-hover border border-card-hover/50 rounded-lg px-4 py-3 text-white text-lg font-semibold placeholder-gray-500 focus:outline-none focus:border-entrada"
+                  />
+                  <div className="mt-2 text-center text-sm text-gray-400">
                     {formatCurrency(parseFloat(amount) || 0)}
-                  </p>
-                </div>
-
-                <div className="grid grid-cols-3 gap-2">
-                  {[1, 2, 3, 4, 5, 6, 7, 8, 9].map((num) => (
-                    <button
-                      key={num}
-                      onClick={() => handleAddAmount(num.toString())}
-                      className="py-3 bg-card-hover hover:bg-card-hover/80 rounded-lg font-bold text-white transition"
-                    >
-                      {num}
-                    </button>
-                  ))}
-                  <button
-                    onClick={handleAddDecimal}
-                    className="py-3 bg-card-hover hover:bg-card-hover/80 rounded-lg font-bold text-white transition"
-                  >
-                    ,
-                  </button>
-                  <button
-                    onClick={() => handleAddAmount('0')}
-                    className="py-3 bg-card-hover hover:bg-card-hover/80 rounded-lg font-bold text-white transition col-span-2"
-                  >
-                    0
-                  </button>
-                  <button
-                    onClick={() => handleAddAmount('backspace')}
-                    className="py-3 bg-red-900/30 hover:bg-red-900/50 rounded-lg font-bold text-red-400 transition flex items-center justify-center"
-                  >
-                    <Delete className="h-5 w-5" />
-                  </button>
+                  </div>
                 </div>
 
                 <div>
