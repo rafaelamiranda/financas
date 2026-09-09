@@ -1,6 +1,7 @@
 import { create } from 'zustand';
 import type { Transaction, Tag, TransactionType } from '../types';
 import { parseLocalDate } from '../utils';
+import { isSupabaseEnabled, insertTransaction as insertSupabaseTransaction, updateTransactionRecord, deleteTransactionRecord, insertTag as insertSupabaseTag, updateTagRecord, deleteTagRecord } from '../lib/supabase';
 
 interface FinancasStore {
   transactions: Transaction[];
@@ -68,12 +69,25 @@ export const useFinancasStore = create<FinancasStore>((set, get) => {
       const transactions = [...get().transactions, newTransaction];
       set({ transactions });
       saveToStorage(transactions, get().tags);
+
+      // Sync to Supabase if available
+      if (isSupabaseEnabled) {
+        insertSupabaseTransaction(newTransaction).catch((err) => {
+          console.error('Failed to sync transaction to Supabase:', err);
+        });
+      }
     },
 
     deleteTransaction: (id) => {
       const transactions = get().transactions.filter((t) => t.id !== id);
       set({ transactions });
       saveToStorage(transactions, get().tags);
+
+      if (isSupabaseEnabled) {
+        deleteTransactionRecord(id).catch((err) => {
+          console.error('Failed to delete transaction from Supabase:', err);
+        });
+      }
     },
 
     updateTransaction: (id, updates) => {
@@ -82,6 +96,12 @@ export const useFinancasStore = create<FinancasStore>((set, get) => {
       );
       set({ transactions });
       saveToStorage(transactions, get().tags);
+
+      if (isSupabaseEnabled) {
+        updateTransactionRecord(id, updates).catch((err) => {
+          console.error('Failed to update transaction in Supabase:', err);
+        });
+      }
     },
 
     addTag: (tag) => {
@@ -92,6 +112,12 @@ export const useFinancasStore = create<FinancasStore>((set, get) => {
       const tags = [...get().tags, newTag];
       set({ tags });
       saveToStorage(get().transactions, tags);
+
+      if (isSupabaseEnabled) {
+        insertSupabaseTag(newTag).catch((err) => {
+          console.error('Failed to sync tag to Supabase:', err);
+        });
+      }
     },
 
     deleteTag: (id) => {
@@ -102,6 +128,12 @@ export const useFinancasStore = create<FinancasStore>((set, get) => {
       }));
       set({ tags, transactions });
       saveToStorage(transactions, tags);
+
+      if (isSupabaseEnabled) {
+        deleteTagRecord(id).catch((err) => {
+          console.error('Failed to delete tag from Supabase:', err);
+        });
+      }
     },
 
     updateTag: (id, updates) => {
@@ -110,6 +142,12 @@ export const useFinancasStore = create<FinancasStore>((set, get) => {
       );
       set({ tags });
       saveToStorage(get().transactions, tags);
+
+      if (isSupabaseEnabled) {
+        updateTagRecord(id, updates).catch((err) => {
+          console.error('Failed to update tag in Supabase:', err);
+        });
+      }
     },
 
     getTransactionsByMonth: (date) => {
