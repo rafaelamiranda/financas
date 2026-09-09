@@ -6,13 +6,14 @@ import AddModal from './AddModal';
 
 export default function Layout() {
   const [showAddModal, setShowAddModal] = useState(false);
-  const [open, setOpen] = useState(() => {
+  const [sidebarFixed, setSidebarFixed] = useState(() => {
     try {
       return localStorage.getItem('sidebarFixed') === 'true';
     } catch {
       return false;
     }
   });
+  const [open, setOpen] = useState(false);
   const location = useLocation();
   const navigate = useNavigate();
 
@@ -31,8 +32,11 @@ export default function Layout() {
   };
 
   const toggleSidebarFixed = () => {
-    const newFixed = !open;
-    setOpen(newFixed);
+    const newFixed = !sidebarFixed;
+    setSidebarFixed(newFixed);
+    if (newFixed) {
+      setOpen(true);
+    }
     try {
       localStorage.setItem('sidebarFixed', String(newFixed));
     } catch {
@@ -42,7 +46,7 @@ export default function Layout() {
 
   return (
     <div className="flex h-screen w-full bg-bg-primary overflow-hidden">
-      <Sidebar open={open} setOpen={setOpen} fixed={open}>
+      <Sidebar open={open || sidebarFixed} setOpen={setOpen} fixed={sidebarFixed}>
         <SidebarBody className="justify-between gap-6">
           <div className="flex flex-col flex-1 overflow-y-auto overflow-x-hidden">
             {/* Logo */}
@@ -78,10 +82,10 @@ export default function Layout() {
             <button
               onClick={toggleSidebarFixed}
               className="w-full py-2 px-2 rounded-lg text-sm text-gray-400 hover:text-white hover:bg-card-hover/50 transition flex items-center justify-center gap-2 overflow-hidden"
-              title={open ? 'Desafixar sidebar' : 'Fixar sidebar'}
+              title={sidebarFixed ? 'Desafixar sidebar' : 'Fixar sidebar'}
             >
-              {open ? <Pin className="h-5 w-5 flex-shrink-0" /> : <PinOff className="h-5 w-5 flex-shrink-0" />}
-              {open && <span className="whitespace-pre text-xs">{open ? 'fixado' : 'desafixar'}</span>}
+              {sidebarFixed ? <Pin className="h-5 w-5 shrink-0" /> : <PinOff className="h-5 w-5 shrink-0" />}
+              {open && <span className="whitespace-pre text-xs">{sidebarFixed ? 'fixado' : 'desafixar'}</span>}
             </button>
           </div>
         </SidebarBody>
