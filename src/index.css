@@ -1,0 +1,36 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+* {
+  box-sizing: border-box;
+}
+
+html, body, #root {
+  margin: 0;
+  padding: 0;
+  height: 100%;
+  width: 100%;
+}
+
+body {
+  @apply bg-bg-primary text-white font-sans;
+}
+
+#root {
+  @apply w-full h-full flex;
+}
+
+@layer components {
+  .card {
+    @apply bg-card-dark rounded-lg border border-card-hover/20 p-4;
+  }
+
+  .btn-primary {
+    @apply px-6 py-2 rounded-full font-bold text-bg-primary bg-entrada hover:bg-opacity-90 transition;
+  }
+
+  .btn-secondary {
+    @apply px-6 py-2 rounded-full font-bold text-white bg-card-hover hover:bg-opacity-90 transition;
+  }
+}
