@@ -5,6 +5,68 @@ export const parseLocalDate = (dateString: string): Date => {
   return new Date(year, month - 1, day);
 };
 
+export const generateRecurringTransactions = (
+  transaction: Transaction,
+  endDate: Date
+): Transaction[] => {
+  const recurring: Transaction[] = [];
+
+  if (transaction.recurrence === 'none') {
+    return [];
+  }
+
+  let currentDate = new Date(
+    transaction.date.getFullYear(),
+    transaction.date.getMonth(),
+    transaction.date.getDate()
+  );
+
+  const maxEndDate = transaction.recurrence_end_date
+    ? new Date(
+        transaction.recurrence_end_date.getFullYear(),
+        transaction.recurrence_end_date.getMonth(),
+        transaction.recurrence_end_date.getDate()
+      )
+    : endDate;
+
+  const queryEndDate = endDate > maxEndDate ? maxEndDate : endDate;
+
+  while (currentDate <= queryEndDate) {
+    if (
+      currentDate > new Date(
+        transaction.date.getFullYear(),
+        transaction.date.getMonth(),
+        transaction.date.getDate()
+      )
+    ) {
+      recurring.push({
+        ...transaction,
+        id: `${transaction.id}-recurring-${currentDate.getTime()}`,
+        date: new Date(currentDate),
+      });
+    }
+
+    switch (transaction.recurrence) {
+      case 'daily':
+        currentDate.setDate(currentDate.getDate() + 1);
+        break;
+      case 'weekly':
+        currentDate.setDate(currentDate.getDate() + 7);
+        break;
+      case 'monthly':
+        currentDate.setMonth(currentDate.getMonth() + 1);
+        break;
+      case 'fixed_until':
+        currentDate.setMonth(currentDate.getMonth() + 1);
+        break;
+      default:
+        return recurring;
+    }
+  }
+
+  return recurring;
+};
+
 export const formatCurrency = (value: number): string => {
   return new Intl.NumberFormat('pt-BR', {
     style: 'currency',
@@ -37,11 +99,20 @@ export const calculateDailyBalances = (transactions: Transaction[], date: Date):
   const daysInMonth = getDaysInMonth(date);
   const balances: DailyBalance[] = [];
 
+  const monthEnd = new Date(year, month + 1, 0);
+
+  const allTransactions: Transaction[] = [];
+  for (const t of transactions) {
+    allTransactions.push(t);
+    const recurring = generateRecurringTransactions(t, monthEnd);
+    allTransactions.push(...recurring);
+  }
+
   let accumulatedBalance = 0;
 
   for (let day = 1; day <= daysInMonth; day++) {
     const dayDate = new Date(year, month, day);
-    const dayTransactions = transactions.filter((t) => {
+    const dayTransactions = allTransactions.filter((t) => {
       const tDate = new Date(t.date);
       return (
         tDate.getFullYear() === year &&
@@ -89,7 +160,17 @@ export const calculateDailyBalances = (transactions: Transaction[], date: Date):
 export const calculateMonthlyTotals = (transactions: Transaction[], date: Date) => {
   const year = date.getFullYear();
   const month = date.getMonth();
-  const monthTransactions = transactions.filter((t) => {
+
+  const monthEnd = new Date(year, month + 1, 0);
+
+  const allTransactions: Transaction[] = [];
+  for (const t of transactions) {
+    allTransactions.push(t);
+    const recurring = generateRecurringTransactions(t, monthEnd);
+    allTransactions.push(...recurring);
+  }
+
+  const monthTransactions = allTransactions.filter((t) => {
     const tDate = new Date(t.date);
     return tDate.getFullYear() === year && tDate.getMonth() === month;
   });
