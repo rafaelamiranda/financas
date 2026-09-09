@@ -15,6 +15,7 @@ interface SidebarContextProps {
   open: boolean;
   setOpen: React.Dispatch<React.SetStateAction<boolean>>;
   animate: boolean;
+  fixed?: boolean;
 }
 
 const SidebarContext = createContext<SidebarContextProps | undefined>(undefined);
@@ -32,11 +33,13 @@ export const SidebarProvider = ({
   open: openProp,
   setOpen: setOpenProp,
   animate = true,
+  fixed,
 }: {
   children: React.ReactNode;
   open?: boolean;
   setOpen?: React.Dispatch<React.SetStateAction<boolean>>;
   animate?: boolean;
+  fixed?: boolean;
 }) => {
   const [openState, setOpenState] = useState(false);
 
@@ -44,7 +47,7 @@ export const SidebarProvider = ({
   const setOpen = setOpenProp !== undefined ? setOpenProp : setOpenState;
 
   return (
-    <SidebarContext.Provider value={{ open, setOpen, animate }}>
+    <SidebarContext.Provider value={{ open, setOpen, animate, fixed }}>
       {children}
     </SidebarContext.Provider>
   );
@@ -55,14 +58,16 @@ export const Sidebar = ({
   open,
   setOpen,
   animate,
+  fixed,
 }: {
   children: React.ReactNode;
   open?: boolean;
   setOpen?: React.Dispatch<React.SetStateAction<boolean>>;
   animate?: boolean;
+  fixed?: boolean;
 }) => {
   return (
-    <SidebarProvider open={open} setOpen={setOpen} animate={animate}>
+    <SidebarProvider open={open} setOpen={setOpen} animate={animate} fixed={fixed}>
       {children}
     </SidebarProvider>
   );
@@ -82,7 +87,7 @@ export const DesktopSidebar = ({
   children,
   ...props
 }: React.ComponentProps<typeof motion.div>) => {
-  const { open, setOpen, animate } = useSidebar();
+  const { open, setOpen, animate, fixed } = useSidebar();
   return (
     <motion.div
       className={cn(
@@ -92,8 +97,8 @@ export const DesktopSidebar = ({
       animate={{
         width: animate ? (open ? '260px' : '72px') : '260px',
       }}
-      onMouseEnter={() => setOpen(true)}
-      onMouseLeave={() => setOpen(false)}
+      onMouseEnter={() => !fixed && setOpen(true)}
+      onMouseLeave={() => !fixed && setOpen(false)}
       {...props}
     >
       {children}
