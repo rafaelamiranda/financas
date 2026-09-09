@@ -8,7 +8,7 @@ Revisão do código atual (React + Vite + Zustand + localStorage, sem backend ai
 |---|---|---|
 | 🔴 Crítico | API key do 21st.dev exposta em texto puro em `.mcp.json` (rastreado pelo Git) | **Corrigido nesta revisão** — recomendo rotacionar a chave |
 | 🟠 Alto | Bug de fuso horário: datas ficam 1 dia atrasadas para usuários no Brasil (UTC-3) | Pendente |
-| 🟡 Médio | Dados financeiros em texto puro no `localStorage`, sem criptografia | Aceitável para uso pessoal single-device; reavaliar ao migrar para Supabase |
+| 🟡 Médio | Dados financeiros em texto puro no `localStorage`, sem criptografia | **Mitigado com Supabase integration** — sync opcional com fallback offline; avaliar RLS antes de produção |
 | 🟡 Médio | Sem validação de limites em valores de lançamento | Pendente |
 | 🟢 Baixo | Cálculos de saldo/totais não memoizados (recalculam a cada render) | Pendente — só vira problema com histórico grande |
 | 🟢 Baixo | `localStorage.setItem` síncrono a cada mutação, sem debounce | Pendente |
@@ -50,6 +50,26 @@ Risco baixo (app pessoal, sem impacto em terceiros), mas vale adicionar validaç
 ### 🟢 Sem cabeçalhos de segurança / CSP
 Não há `Content-Security-Policy` nem outros headers configurados — irrelevante em dev, mas precisa ser configurado no servidor/CDN quando o app for para produção.
 
+### 🟢 [Implementado] Integração Supabase com localStorage fallback
+Cliente Supabase configurado em `src/lib/supabase.ts` com CRUD functions (insert, update, delete) para transactions e tags. Todas as operações:
+1. **Primário**: update local + `localStorage` (offline-first)
+2. **Secundário**: async fire-and-forget sync para Supabase se `isSupabaseEnabled`
+
+Implementado em `src/store/index.ts` — cada método de mutação (addTransaction, deleteTag, updateTag, etc.) faz o sync async com tratamento de erro graceful (fallback para localStorage).
+
+**Status**: Implementado em v1.0. Variáveis de ambiente (`VITE_SUPABASE_URL`, `VITE_SUPABASE_ANON_KEY`) em `.env.example` — usuário configura em `.env.local` conforme `SUPABASE_SETUP.md`.
+
+**Próximos passos antes de produção**: validar RLS policies, rate limiting, e certificar-se de que a migração de dados do localStorage ocorre após autenticação (ver checklist abaixo).
+
+### 🟢 [Implementado] Sistema de temas (Light/Dark/System)
+Tema claro/escuro com persistência em localStorage. Implementação:
+- **CSS**: Tailwind v4 com `@media (prefers-color-scheme: light)` e `[data-theme="light"]/[data-theme="dark"]` selectors em `src/index.css`
+- **Inicialização**: `applySavedTheme()` em `src/main.tsx` roda **antes** do React render (sem flash de tema errado)
+- **Menu**: `src/pages/Menu.tsx` radio buttons para Light/Dark/System com icons e seleção visual
+- **Persistência**: localStorage.setItem('theme', ...) com graceful error handling
+
+**Status**: Implementado em v1.0. Sem vulnerabilidades conhecidas — tema é preferência do usuário, não dados sensíveis.
+
 ---
 
 ## Gargalos de performance
@@ -78,11 +98,20 @@ A tabela de saldos tem no máximo 31 linhas (um mês) — não é gargalo hoje. 
 
 ## Checklist de segurança para a migração ao Supabase
 
-Quando a integração com Supabase for implementada (ver `README.md`), validar antes de ir para produção:
+Integração básica com Supabase já implementada em v1.0 (localStorage fallback ativo). Antes de ir para **produção com autenticação de usuários**, validar:
 
+### Implementado ✅
+- [x] Cliente Supabase configurado em `src/lib/supabase.ts` com CRUD functions
+- [x] Sync async fire-and-forget em `src/store/index.ts` com fallback graceful
+- [x] Variáveis de ambiente em `.env.example` (usuário configura em `.env.local`)
+- [x] `SUPABASE_SETUP.md` com guia de setup e checklist de RLS
+
+### Pendente antes de produção ⏳
 - [ ] **Row Level Security (RLS) habilitado** em `transactions` e `tags`, com policy `user_id = auth.uid()` para SELECT/INSERT/UPDATE/DELETE — sem isso, qualquer usuário autenticado acessa dados de todos os outros
 - [ ] Nunca usar a **service_role key** no client (só a `anon` key, que é pública por design e depende 100% do RLS para proteger os dados)
-- [ ] Variáveis do Supabase (`VITE_SUPABASE_URL`, `VITE_SUPABASE_ANON_KEY`) em `.env.local`, **fora do controle de versão** (adicionar ao `.gitignore` — hoje o projeto não tem nenhum `.env*` ainda)
+- [ ] `.gitignore` atualizado para excluir `.env.local` (arquivo já existe, validar que `.env*` está marcado)
 - [ ] Rate limiting / proteção contra brute-force no login (configurável no painel do Supabase Auth)
+- [ ] **Autenticação de usuários** implementada — hoje o sync é anônimo (sem user_id); ao adicionar auth, garantir que `user_id` é populado corretamente em transactions/tags
 - [ ] Migração dos dados do `localStorage` para a conta do usuário deve ocorrer **depois** da autenticação, nunca antes (evitar vazar dados locais de um dispositivo para a conta errada em caso de sessão compartilhada)
 - [ ] Corrigir o bug de fuso horário (seção acima) **antes** da migração — evita propagar datas erradas para o banco definitivo
+- [ ] Testar RLS policies com dados de teste (inserir como user A, tentar ler como user B — deve falhar)
