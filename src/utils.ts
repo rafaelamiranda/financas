@@ -1,4 +1,4 @@
-import { Transaction, DailyBalance } from './types';
+import type { Transaction, DailyBalance } from './types';
 
 export const formatCurrency = (value: number): string => {
   return new Intl.NumberFormat('pt-BR', {

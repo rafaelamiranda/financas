@@ -61,12 +61,10 @@ export default function Totais() {
   );
 
   const MovementItem = ({
-    icon,
     label,
     amount,
     color,
   }: {
-    icon: string;
     label: string;
     amount: number;
     color: string;
@@ -191,31 +189,26 @@ export default function Totais() {
             <h2 className="text-lg font-bold text-white">Movimentações do Mês</h2>
             <div className="space-y-2">
               <MovementItem
-                icon="E"
                 label={CATEGORY_LABELS.entrada}
                 amount={monthlyTotals.entrada}
                 color={CATEGORY_COLORS.entrada}
               />
               <MovementItem
-                icon="S"
                 label={CATEGORY_LABELS.saida}
                 amount={monthlyTotals.saida}
                 color={CATEGORY_COLORS.saida}
               />
               <MovementItem
-                icon="D"
                 label={CATEGORY_LABELS.diario}
                 amount={monthlyTotals.diario}
                 color={CATEGORY_COLORS.diario}
               />
               <MovementItem
-                icon="E"
                 label={CATEGORY_LABELS.economia}
                 amount={monthlyTotals.economia}
                 color={CATEGORY_COLORS.economia}
               />
               <MovementItem
-                icon="C"
                 label={CATEGORY_LABELS.cartao}
                 amount={monthlyTotals.cartao}
                 color={CATEGORY_COLORS.cartao}

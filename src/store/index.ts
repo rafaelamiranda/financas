@@ -1,5 +1,5 @@
 import { create } from 'zustand';
-import { Transaction, Tag, TransactionType } from '../types';
+import type { Transaction, Tag, TransactionType } from '../types';
 
 interface FinancasStore {
   transactions: Transaction[];

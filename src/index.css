@@ -1,6 +1,16 @@
-@tailwind base;
-@tailwind components;
-@tailwind utilities;
+@import "tailwindcss";
+
+@theme {
+  --color-bg-primary: #0a0a0a;
+  --color-bg-secondary: #0d0d0f;
+  --color-card-dark: #161618;
+  --color-card-hover: #1a1a1c;
+  --color-entrada: #7ED957;
+  --color-saida: #FF6B6B;
+  --color-diario: #FF69B4;
+  --color-economia: #ADFF2F;
+  --color-cartao: #9D4EDD;
+}
 
 * {
   box-sizing: border-box;
@@ -27,10 +37,10 @@ body {
   }
 
   .btn-primary {
-    @apply px-6 py-2 rounded-full font-bold text-bg-primary bg-entrada hover:bg-opacity-90 transition;
+    @apply px-6 py-2 rounded-full font-bold text-bg-primary bg-entrada hover:bg-entrada/90 transition;
   }
 
   .btn-secondary {
-    @apply px-6 py-2 rounded-full font-bold text-white bg-card-hover hover:bg-opacity-90 transition;
+    @apply px-6 py-2 rounded-full font-bold text-white bg-card-hover hover:bg-card-hover/90 transition;
   }
 }

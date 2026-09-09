@@ -103,7 +103,7 @@ export default function Tags() {
           </div>
           <button
             onClick={() => setShowAddTag(true)}
-            className="px-4 py-2 bg-entrada text-bg-primary font-bold rounded-lg hover:bg-opacity-90 transition"
+            className="px-4 py-2 bg-entrada text-bg-primary font-bold rounded-lg hover:bg-entrada/90 transition"
           >
             +
           </button>
@@ -225,7 +225,7 @@ export default function Tags() {
               <button
                 onClick={handleAddTag}
                 disabled={!newTagName.trim()}
-                className="flex-1 py-2 px-4 rounded-lg font-bold text-bg-primary bg-entrada hover:bg-opacity-90 transition disabled:opacity-50 disabled:cursor-not-allowed"
+                className="flex-1 py-2 px-4 rounded-lg font-bold text-bg-primary bg-entrada hover:bg-entrada/90 transition disabled:opacity-50 disabled:cursor-not-allowed"
               >
                 Criar
               </button>
