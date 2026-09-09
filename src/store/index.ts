@@ -1,5 +1,6 @@
 import { create } from 'zustand';
 import type { Transaction, Tag, TransactionType } from '../types';
+import { parseLocalDate } from '../utils';
 
 interface FinancasStore {
   transactions: Transaction[];
@@ -20,12 +21,18 @@ const loadFromStorage = (): { transactions: Transaction[]; tags: Tag[] } => {
     if (stored) {
       const data = JSON.parse(stored);
       return {
-        transactions: data.transactions.map((t: any) => ({
-          ...t,
-          date: new Date(t.date),
-          created_at: new Date(t.created_at),
-          recurrence_end_date: t.recurrence_end_date ? new Date(t.recurrence_end_date) : undefined,
-        })),
+        transactions: data.transactions.map((t: any) => {
+          const dateStr = typeof t.date === 'string' ? t.date.split('T')[0] : t.date;
+          const createdAtStr = typeof t.created_at === 'string' ? t.created_at.split('T')[0] : t.created_at;
+          const recurrenceEndDateStr = t.recurrence_end_date ? (typeof t.recurrence_end_date === 'string' ? t.recurrence_end_date.split('T')[0] : t.recurrence_end_date) : undefined;
+
+          return {
+            ...t,
+            date: parseLocalDate(dateStr),
+            created_at: parseLocalDate(createdAtStr),
+            recurrence_end_date: recurrenceEndDateStr ? parseLocalDate(recurrenceEndDateStr) : undefined,
+          };
+        }),
         tags: data.tags,
       };
     }

@@ -1,10 +1,13 @@
 import { useState } from 'react';
+import type { Transaction } from '../types';
 import { useFinancasStore } from '../store';
 import { calculateDailyBalances, calculateMonthlyTotals, formatCurrency, getMonthName, getHeatmapColor } from '../utils';
 import { CATEGORY_COLORS } from '../types';
+import EditTransactionModal from '../components/EditTransactionModal';
 
 export default function Saldos() {
   const [currentDate, setCurrentDate] = useState(new Date());
+  const [editingTransaction, setEditingTransaction] = useState<Transaction | null>(null);
   const transactions = useFinancasStore((state) => state.transactions);
 
   const dailyBalances = calculateDailyBalances(transactions, currentDate);
@@ -92,13 +95,22 @@ export default function Saldos() {
                       today.getDate() === balance.date.getDate();
 
                     const heatmapColor = getHeatmapColor(balance.saldo, today, balance.date);
+                    const dayTransactions = transactions.filter((t) => {
+                      const tDate = new Date(t.date);
+                      return (
+                        tDate.getFullYear() === balance.date.getFullYear() &&
+                        tDate.getMonth() === balance.date.getMonth() &&
+                        tDate.getDate() === balance.date.getDate()
+                      );
+                    });
 
                     return (
                       <tr
                         key={balance.date.getTime()}
-                        className={`border-b border-card-hover/10 transition hover:bg-card-hover/30 ${
+                        className={`border-b border-card-hover/10 transition hover:bg-card-hover/30 cursor-pointer ${
                           isToday ? 'bg-card-hover/50' : ''
                         }`}
+                        onClick={() => dayTransactions.length > 0 && setEditingTransaction(dayTransactions[0])}
                       >
                         <td className="py-3 px-2 font-semibold">
                           <span className={isToday ? 'text-entrada' : 'text-white'}>
@@ -169,6 +181,12 @@ export default function Saldos() {
           )}
         </div>
       </div>
+
+      <EditTransactionModal
+        isOpen={editingTransaction !== null}
+        transaction={editingTransaction}
+        onClose={() => setEditingTransaction(null)}
+      />
     </div>
   );
 }

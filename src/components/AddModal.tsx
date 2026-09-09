@@ -4,7 +4,7 @@ import { ArrowDownLeft, ArrowUpRight, ShoppingBag, PiggyBank, CreditCard, X, Che
 import type { TransactionType } from '../types';
 import { CATEGORY_COLORS, CATEGORY_LABELS, TAG_COLOR_PRESETS } from '../types';
 import { useFinancasStore } from '../store';
-import { formatCurrency } from '../utils';
+import { formatCurrency, parseLocalDate } from '../utils';
 
 interface AddModalProps {
   isOpen: boolean;
@@ -82,23 +82,41 @@ export default function AddModal({ isOpen, onClose }: AddModalProps) {
 
   const handleSubmit = () => {
     const numAmount = parseFloat(amount);
-    if (numAmount > 0) {
-      addTransaction({
-        type: selectedType,
-        amount: numAmount,
-        description: description || CATEGORY_LABELS[selectedType],
-        date: new Date(date),
-        recurrence: 'none',
-        tag_ids: selectedTagIds,
-      });
-      onClose();
-      setAmount('0');
-      setDescription('');
-      setDate(new Date().toISOString().split('T')[0]);
-      setSelectedTagIds([]);
-      setShowNewTagForm(false);
-      setStep('select');
+    const selectedDate = parseLocalDate(date);
+    const now = new Date();
+    const oneYearAgo = new Date(now.getFullYear() - 1, now.getMonth(), now.getDate());
+    const oneYearFromNow = new Date(now.getFullYear() + 1, now.getMonth(), now.getDate());
+
+    if (numAmount <= 0) {
+      alert('Valor deve ser maior que 0');
+      return;
     }
+
+    if (numAmount > 999999.99) {
+      alert('Valor não pode ser maior que R$ 999.999,99');
+      return;
+    }
+
+    if (selectedDate < oneYearAgo || selectedDate > oneYearFromNow) {
+      alert('Data deve estar dentro de 1 ano no passado ou futuro');
+      return;
+    }
+
+    addTransaction({
+      type: selectedType,
+      amount: numAmount,
+      description: description || CATEGORY_LABELS[selectedType],
+      date: selectedDate,
+      recurrence: 'none',
+      tag_ids: selectedTagIds,
+    });
+    onClose();
+    setAmount('0');
+    setDescription('');
+    setDate(new Date().toISOString().split('T')[0]);
+    setSelectedTagIds([]);
+    setShowNewTagForm(false);
+    setStep('select');
   };
 
   return (
