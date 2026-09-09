@@ -9,11 +9,16 @@ export default function Tags() {
   const [newTagName, setNewTagName] = useState('');
   const [newTagColor, setNewTagColor] = useState(TAG_COLOR_PRESETS[0]);
   const [searchQuery, setSearchQuery] = useState('');
+  const [editingTag, setEditingTag] = useState<string | null>(null);
+  const [editTagName, setEditTagName] = useState('');
+  const [editTagColor, setEditTagColor] = useState('');
+  const [showMenu, setShowMenu] = useState<string | null>(null);
 
   const tags = useFinancasStore((state) => state.tags);
   const transactions = useFinancasStore((state) => state.transactions);
   const addTag = useFinancasStore((state) => state.addTag);
   const deleteTag = useFinancasStore((state) => state.deleteTag);
+  const updateTag = useFinancasStore((state) => state.updateTag);
 
   const handlePrevMonth = () => {
     setCurrentDate(new Date(currentDate.getFullYear(), currentDate.getMonth() - 1));
@@ -32,6 +37,28 @@ export default function Tags() {
       setNewTagName('');
       setNewTagColor(TAG_COLOR_PRESETS[0]);
       setShowAddTag(false);
+    }
+  };
+
+  const startEditTag = (tagId: string) => {
+    const tag = tags.find((t) => t.id === tagId);
+    if (tag) {
+      setEditingTag(tagId);
+      setEditTagName(tag.name);
+      setEditTagColor(tag.color);
+      setShowMenu(null);
+    }
+  };
+
+  const handleEditTag = () => {
+    if (editingTag && editTagName.trim()) {
+      updateTag(editingTag, {
+        name: editTagName,
+        color: editTagColor,
+      });
+      setEditingTag(null);
+      setEditTagName('');
+      setEditTagColor('');
     }
   };
 
@@ -137,12 +164,33 @@ export default function Tags() {
                       >
                         {formatCurrency(total)}
                       </span>
-                      <button
-                        onClick={() => deleteTag(tag.id)}
-                        className="text-gray-400 hover:text-red-400 transition p-1"
-                      >
-                        ⋮
-                      </button>
+                      <div className="relative">
+                        <button
+                          onClick={() => setShowMenu(showMenu === tag.id ? null : tag.id)}
+                          className="text-gray-400 hover:text-white transition p-1"
+                        >
+                          ⋮
+                        </button>
+                        {showMenu === tag.id && (
+                          <div className="absolute right-0 top-full mt-1 bg-card-hover border border-card-hover/50 rounded-lg shadow-lg z-10 min-w-32">
+                            <button
+                              onClick={() => startEditTag(tag.id)}
+                              className="block w-full text-left px-4 py-2 text-sm text-gray-300 hover:text-white hover:bg-card-hover/50 transition first:rounded-t-lg"
+                            >
+                              Editar
+                            </button>
+                            <button
+                              onClick={() => {
+                                deleteTag(tag.id);
+                                setShowMenu(null);
+                              }}
+                              className="block w-full text-left px-4 py-2 text-sm text-red-400 hover:text-red-300 hover:bg-red-900/20 transition last:rounded-b-lg"
+                            >
+                              Deletar
+                            </button>
+                          </div>
+                        )}
+                      </div>
                     </div>
                   </div>
                 );
@@ -151,6 +199,79 @@ export default function Tags() {
           )}
         </div>
       </div>
+
+      {/* Edit Tag Modal */}
+      {editingTag && (
+        <div className="fixed inset-0 bg-black/70 z-50 flex items-end md:items-center justify-center">
+          <div className="w-full md:w-96 bg-card-dark rounded-t-2xl md:rounded-2xl p-6 space-y-4">
+            <h2 className="text-xl font-bold text-white">Editar tag</h2>
+
+            <div>
+              <label className="text-sm text-gray-400 block mb-2">Nome</label>
+              <input
+                type="text"
+                value={editTagName}
+                onChange={(e) => setEditTagName(e.target.value)}
+                placeholder="Nome da tag"
+                className="w-full bg-card-hover border border-card-hover/50 rounded-lg px-4 py-2 text-white placeholder-gray-500 focus:outline-none focus:border-entrada"
+              />
+            </div>
+
+            <div>
+              <label className="text-sm text-gray-400 block mb-3">Cor</label>
+              <div className="grid grid-cols-4 gap-3">
+                {TAG_COLOR_PRESETS.map((color) => (
+                  <button
+                    key={color}
+                    onClick={() => setEditTagColor(color)}
+                    className={`w-full aspect-square rounded-lg transition ${
+                      editTagColor === color
+                        ? 'ring-2 ring-offset-2 ring-white'
+                        : 'hover:opacity-80'
+                    }`}
+                    style={{ backgroundColor: color }}
+                  />
+                ))}
+              </div>
+              <div className="mt-3 flex gap-2">
+                <input
+                  type="color"
+                  value={editTagColor}
+                  onChange={(e) => setEditTagColor(e.target.value)}
+                  className="w-12 h-10 rounded-lg cursor-pointer"
+                />
+                <input
+                  type="text"
+                  value={editTagColor}
+                  onChange={(e) => setEditTagColor(e.target.value)}
+                  placeholder="#7ED957"
+                  className="flex-1 bg-card-hover border border-card-hover/50 rounded-lg px-4 py-2 text-white placeholder-gray-500 focus:outline-none focus:border-entrada text-sm"
+                />
+              </div>
+            </div>
+
+            <div className="flex gap-2 pt-4">
+              <button
+                onClick={() => {
+                  setEditingTag(null);
+                  setEditTagName('');
+                  setEditTagColor('');
+                }}
+                className="flex-1 py-2 px-4 rounded-lg text-gray-400 hover:text-white hover:bg-card-hover/50 transition font-bold"
+              >
+                Cancelar
+              </button>
+              <button
+                onClick={handleEditTag}
+                disabled={!editTagName.trim()}
+                className="flex-1 py-2 px-4 rounded-lg font-bold text-bg-primary bg-entrada hover:bg-entrada/90 transition disabled:opacity-50 disabled:cursor-not-allowed"
+              >
+                Salvar
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Add Tag Modal */}
       {showAddTag && (
