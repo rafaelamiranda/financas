@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { AnimatePresence, motion } from 'framer-motion';
 import { X, Delete, Plus, Check } from 'lucide-react';
-import type { Transaction } from '../types';
+import type { Transaction, RecurrenceType } from '../types';
 import { CATEGORY_COLORS, CATEGORY_LABELS, TAG_COLOR_PRESETS } from '../types';
 import { useFinancasStore } from '../store';
 import { formatCurrency, parseLocalDate } from '../utils';
@@ -21,6 +21,8 @@ export default function EditTransactionModal({ isOpen, transaction, onClose }: E
   const [newTagName, setNewTagName] = useState('');
   const [newTagColor, setNewTagColor] = useState(TAG_COLOR_PRESETS[0]);
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
+  const [recurrence, setRecurrence] = useState<RecurrenceType>('none');
+  const [recurrenceEndDate, setRecurrenceEndDate] = useState('');
 
   const { updateTransaction, deleteTransaction, tags, addTag } = useFinancasStore();
 
@@ -30,6 +32,8 @@ export default function EditTransactionModal({ isOpen, transaction, onClose }: E
     setDescription(transaction.description);
     setDate(transaction.date.toISOString().split('T')[0]);
     setSelectedTagIds(transaction.tag_ids);
+    setRecurrence(transaction.recurrence);
+    setRecurrenceEndDate(transaction.recurrence_end_date ? transaction.recurrence_end_date.toISOString().split('T')[0] : '');
   }
 
   const toggleTag = (tagId: string) => {
@@ -93,6 +97,8 @@ export default function EditTransactionModal({ isOpen, transaction, onClose }: E
       amount: numAmount,
       description: description || CATEGORY_LABELS[transaction.type],
       date: selectedDate,
+      recurrence,
+      recurrence_end_date: recurrence === 'fixed_until' && recurrenceEndDate ? parseLocalDate(recurrenceEndDate) : undefined,
       tag_ids: selectedTagIds,
     });
 
@@ -102,6 +108,8 @@ export default function EditTransactionModal({ isOpen, transaction, onClose }: E
     setDate('');
     setSelectedTagIds([]);
     setShowNewTagForm(false);
+    setRecurrence('none');
+    setRecurrenceEndDate('');
   };
 
   const handleDelete = () => {
@@ -274,6 +282,82 @@ export default function EditTransactionModal({ isOpen, transaction, onClose }: E
                   >
                     Criar e selecionar
                   </button>
+                </div>
+              )}
+            </div>
+
+            <div>
+              <label className="text-sm text-gray-400 block mb-3">Recorrência</label>
+              <div className="space-y-2">
+                <button
+                  type="button"
+                  onClick={() => {
+                    setRecurrence('none');
+                    setRecurrenceEndDate('');
+                  }}
+                  className={`w-full text-left py-2 px-3 rounded-lg transition ${
+                    recurrence === 'none'
+                      ? 'bg-entrada/30 border border-entrada text-white'
+                      : 'bg-card-hover/30 border border-card-hover/50 text-gray-300 hover:border-gray-400'
+                  }`}
+                >
+                  Nenhuma (lançamento único)
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setRecurrence('daily')}
+                  className={`w-full text-left py-2 px-3 rounded-lg transition ${
+                    recurrence === 'daily'
+                      ? 'bg-entrada/30 border border-entrada text-white'
+                      : 'bg-card-hover/30 border border-card-hover/50 text-gray-300 hover:border-gray-400'
+                  }`}
+                >
+                  Diário
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setRecurrence('weekly')}
+                  className={`w-full text-left py-2 px-3 rounded-lg transition ${
+                    recurrence === 'weekly'
+                      ? 'bg-entrada/30 border border-entrada text-white'
+                      : 'bg-card-hover/30 border border-card-hover/50 text-gray-300 hover:border-gray-400'
+                  }`}
+                >
+                  Semanal
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setRecurrence('monthly')}
+                  className={`w-full text-left py-2 px-3 rounded-lg transition ${
+                    recurrence === 'monthly'
+                      ? 'bg-entrada/30 border border-entrada text-white'
+                      : 'bg-card-hover/30 border border-card-hover/50 text-gray-300 hover:border-gray-400'
+                  }`}
+                >
+                  Mensal
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setRecurrence('fixed_until')}
+                  className={`w-full text-left py-2 px-3 rounded-lg transition ${
+                    recurrence === 'fixed_until'
+                      ? 'bg-entrada/30 border border-entrada text-white'
+                      : 'bg-card-hover/30 border border-card-hover/50 text-gray-300 hover:border-gray-400'
+                  }`}
+                >
+                  Até uma data
+                </button>
+              </div>
+
+              {recurrence === 'fixed_until' && (
+                <div className="mt-3">
+                  <label className="text-sm text-gray-400 block mb-2">Até quando?</label>
+                  <input
+                    type="date"
+                    value={recurrenceEndDate}
+                    onChange={(e) => setRecurrenceEndDate(e.target.value)}
+                    className="w-full bg-card-hover border border-card-hover/50 rounded-lg px-4 py-2 text-white focus:outline-none focus:border-entrada"
+                  />
                 </div>
               )}
             </div>
