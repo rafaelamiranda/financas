@@ -2,6 +2,8 @@ import { useState } from 'react';
 import { useFinancasStore } from '../store';
 import { calculateMonthlyTotals, formatCurrency, getMonthName, getDaysInMonth } from '../utils';
 import { CATEGORY_COLORS, CATEGORY_LABELS } from '../types';
+import { ProgressIndicator } from '../components/ProgressIndicator';
+import { StatusBadge } from '../components/StatusBadge';
 
 export default function Totais() {
   const [currentDate, setCurrentDate] = useState(new Date());
@@ -64,10 +66,12 @@ export default function Totais() {
     label,
     amount,
     color,
+    status,
   }: {
     label: string;
     amount: number;
     color: string;
+    status: 'entrada' | 'saida' | 'diario' | 'economia' | 'cartao';
   }) => (
     <div className="flex items-center justify-between py-3 px-4 rounded-lg bg-card-hover/30 hover:bg-card-hover/50 transition">
       <div className="flex items-center gap-3">
@@ -77,7 +81,10 @@ export default function Totais() {
         >
           {label[0].toUpperCase()}
         </div>
-        <span className="font-semibold text-white">{label}</span>
+        <div className="flex flex-col gap-1">
+          <span className="font-semibold text-white">{label}</span>
+          <StatusBadge status={status} size="sm" variant="subtle" />
+        </div>
       </div>
       <span className="font-bold text-white">{formatCurrency(amount)}</span>
     </div>
@@ -132,29 +139,24 @@ export default function Totais() {
 
               {/* Economizado */}
               <div className="card space-y-4">
-                <h3 className="text-sm font-semibold text-gray-400">Economizado</h3>
+                <div className="flex items-center justify-between">
+                  <h3 className="text-sm font-semibold text-gray-400">Economizado</h3>
+                  <StatusBadge status="economia" size="sm" />
+                </div>
                 <div className="text-4xl font-bold text-economia">
                   {monthlyTotals.economizedPercentage.toFixed(1)}%
                 </div>
-                <div className="space-y-2">
-                  <div className="flex items-center justify-between text-xs text-gray-400">
-                    <span>Guardado</span>
-                    <span>Renda</span>
-                  </div>
-                  <div className="w-full bg-card-hover rounded-full h-2 overflow-hidden">
-                    <div
-                      className="h-full bg-economia transition-all"
-                      style={{
-                        width: `${Math.min(monthlyTotals.economizedPercentage, 100)}%`,
-                      }}
-                    />
-                  </div>
-                  <p className="text-xs text-gray-500 mt-2">
-                    {monthlyTotals.economizedPercentage === 0
-                      ? 'Nada guardado'
-                      : `${formatCurrency(monthlyTotals.economia)} guardado`}
-                  </p>
-                </div>
+                <ProgressIndicator
+                  value={monthlyTotals.economizedPercentage}
+                  color="success"
+                  label="Guardado vs Renda"
+                  showLabel={true}
+                />
+                <p className="text-xs text-gray-500">
+                  {monthlyTotals.economizedPercentage === 0
+                    ? 'Nada guardado'
+                    : `${formatCurrency(monthlyTotals.economia)} guardado`}
+                </p>
               </div>
 
               {/* Custo de Vida */}
@@ -189,26 +191,31 @@ export default function Totais() {
             <h2 className="text-lg font-bold text-white">Movimentações do Mês</h2>
             <div className="space-y-2">
               <MovementItem
+                status="entrada"
                 label={CATEGORY_LABELS.entrada}
                 amount={monthlyTotals.entrada}
                 color={CATEGORY_COLORS.entrada}
               />
               <MovementItem
+                status="saida"
                 label={CATEGORY_LABELS.saida}
                 amount={monthlyTotals.saida}
                 color={CATEGORY_COLORS.saida}
               />
               <MovementItem
+                status="diario"
                 label={CATEGORY_LABELS.diario}
                 amount={monthlyTotals.diario}
                 color={CATEGORY_COLORS.diario}
               />
               <MovementItem
+                status="economia"
                 label={CATEGORY_LABELS.economia}
                 amount={monthlyTotals.economia}
                 color={CATEGORY_COLORS.economia}
               />
               <MovementItem
+                status="cartao"
                 label={CATEGORY_LABELS.cartao}
                 amount={monthlyTotals.cartao}
                 color={CATEGORY_COLORS.cartao}
