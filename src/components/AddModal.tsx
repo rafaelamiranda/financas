@@ -32,7 +32,7 @@ const CATEGORY_ICONS: Record<TransactionType, React.ReactNode> = {
 export default function AddModal({ isOpen, onClose }: AddModalProps) {
   const [step, setStep] = useState<'select' | 'form'>('select');
   const [selectedType, setSelectedType] = useState<TransactionType>('entrada');
-  const [amount, setAmount] = useState('0');
+  const [amount, setAmount] = useState('');
   const [description, setDescription] = useState('');
   const [date, setDate] = useState(new Date().toISOString().split('T')[0]);
   const [selectedTagIds, setSelectedTagIds] = useState<string[]>([]);
@@ -69,19 +69,19 @@ export default function AddModal({ isOpen, onClose }: AddModalProps) {
   };
 
   const handleAmountChange = (value: string) => {
-    const cleaned = value.replace(/[^\d.]/g, '');
-    const parts = cleaned.split('.');
+    const cleaned = value.replace(/[^\d,]/g, '');
+    const parts = cleaned.split(',');
     if (parts.length > 2) {
       return;
     }
     if (parts[1] && parts[1].length > 2) {
       return;
     }
-    setAmount(cleaned || '0');
+    setAmount(cleaned);
   };
 
   const handleSubmit = () => {
-    const numAmount = parseFloat(amount);
+    const numAmount = parseFloat(amount.replace(',', '.'));
     const selectedDate = parseLocalDate(date);
     const now = new Date();
     const oneYearAgo = new Date(now.getFullYear() - 1, now.getMonth(), now.getDate());
@@ -199,7 +199,7 @@ export default function AddModal({ isOpen, onClose }: AddModalProps) {
                     className="w-full bg-card-hover border border-card-hover/50 rounded-lg px-4 py-3 text-white text-lg font-semibold placeholder-gray-500 focus:outline-none focus:border-entrada"
                   />
                   <div className="mt-2 text-center text-sm text-gray-400">
-                    {formatCurrency(parseFloat(amount) || 0)}
+                    {formatCurrency(parseFloat(amount.replace(',', '.')) || 0)}
                   </div>
                 </div>
 

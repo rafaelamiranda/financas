@@ -108,7 +108,22 @@ export const calculateDailyBalances = (transactions: Transaction[], date: Date):
     allTransactions.push(...recurring);
   }
 
+  // Calcular saldo final do mês anterior para continuar a partir daí
   let accumulatedBalance = 0;
+  if (month > 0 || year > new Date().getFullYear()) {
+    const prevMonthDate = new Date(year, month - 1, 1);
+    const prevMonthTransactions = allTransactions.filter((t) => {
+      const tDate = new Date(t.date);
+      return tDate.getFullYear() === prevMonthDate.getFullYear() && tDate.getMonth() === prevMonthDate.getMonth();
+    });
+
+    accumulatedBalance = prevMonthTransactions
+      .reduce((sum, t) => {
+        if (t.type === 'entrada') return sum + t.amount;
+        if (t.type === 'saida' || t.type === 'diario' || t.type === 'economia') return sum - t.amount;
+        return sum;
+      }, 0);
+  }
 
   for (let day = 1; day <= daysInMonth; day++) {
     const dayDate = new Date(year, month, day);

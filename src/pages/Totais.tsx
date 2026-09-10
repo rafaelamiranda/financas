@@ -66,12 +66,10 @@ export default function Totais() {
     label,
     amount,
     color,
-    status,
   }: {
     label: string;
     amount: number;
     color: string;
-    status: 'entrada' | 'saida' | 'diario' | 'economia' | 'cartao';
   }) => (
     <div className="flex items-center justify-between py-3 px-4 rounded-lg bg-card-hover/30 hover:bg-card-hover/50 transition">
       <div className="flex items-center gap-3">
@@ -81,10 +79,7 @@ export default function Totais() {
         >
           {label[0].toUpperCase()}
         </div>
-        <div className="flex flex-col gap-1">
-          <span className="font-semibold text-white">{label}</span>
-          <StatusBadge status={status} size="sm" variant="subtle" />
-        </div>
+        <span className="font-semibold text-white">{label}</span>
       </div>
       <span className="font-bold text-white">{formatCurrency(amount)}</span>
     </div>
@@ -191,31 +186,26 @@ export default function Totais() {
             <h2 className="text-lg font-bold text-white">Movimentações do Mês</h2>
             <div className="space-y-2">
               <MovementItem
-                status="entrada"
                 label={CATEGORY_LABELS.entrada}
                 amount={monthlyTotals.entrada}
                 color={CATEGORY_COLORS.entrada}
               />
               <MovementItem
-                status="saida"
                 label={CATEGORY_LABELS.saida}
                 amount={monthlyTotals.saida}
                 color={CATEGORY_COLORS.saida}
               />
               <MovementItem
-                status="diario"
                 label={CATEGORY_LABELS.diario}
                 amount={monthlyTotals.diario}
                 color={CATEGORY_COLORS.diario}
               />
               <MovementItem
-                status="economia"
                 label={CATEGORY_LABELS.economia}
                 amount={monthlyTotals.economia}
                 color={CATEGORY_COLORS.economia}
               />
               <MovementItem
-                status="cartao"
                 label={CATEGORY_LABELS.cartao}
                 amount={monthlyTotals.cartao}
                 color={CATEGORY_COLORS.cartao}

@@ -8,6 +8,7 @@ import EditTransactionModal from '../components/EditTransactionModal';
 export default function Saldos() {
   const [currentDate, setCurrentDate] = useState(new Date());
   const [editingTransaction, setEditingTransaction] = useState<Transaction | null>(null);
+  const [selectedDayTransactions, setSelectedDayTransactions] = useState<Transaction[]>([]);
   const transactions = useFinancasStore((state) => state.transactions);
 
   const dailyBalances = calculateDailyBalances(transactions, currentDate);
@@ -110,7 +111,13 @@ export default function Saldos() {
                         className={`border-b border-card-hover/10 transition hover:bg-card-hover/30 cursor-pointer ${
                           isToday ? 'bg-card-hover/50' : ''
                         }`}
-                        onClick={() => dayTransactions.length > 0 && setEditingTransaction(dayTransactions[0])}
+                        onClick={() => {
+                          if (dayTransactions.length === 1) {
+                            setEditingTransaction(dayTransactions[0]);
+                          } else if (dayTransactions.length > 1) {
+                            setSelectedDayTransactions(dayTransactions);
+                          }
+                        }}
                       >
                         <td className="py-3 px-2 font-semibold">
                           <span className={isToday ? 'text-entrada' : 'text-white'}>
@@ -181,6 +188,39 @@ export default function Saldos() {
           )}
         </div>
       </div>
+
+      {selectedDayTransactions.length > 0 && (
+        <div className="fixed inset-0 bg-black/50 flex items-end md:items-center justify-center z-50">
+          <div className="bg-card-dark w-full md:w-96 rounded-t-lg md:rounded-lg p-4 space-y-3 max-h-[80vh] overflow-auto">
+            <h3 className="text-lg font-bold text-white mb-4">Selecione a transação</h3>
+            {selectedDayTransactions.map((transaction) => (
+              <button
+                key={transaction.id}
+                onClick={() => {
+                  setEditingTransaction(transaction);
+                  setSelectedDayTransactions([]);
+                }}
+                className="w-full p-3 rounded-lg bg-card-hover/50 hover:bg-card-hover transition text-left border-l-4"
+                style={{ borderColor: CATEGORY_COLORS[transaction.type] }}
+              >
+                <div className="flex items-center justify-between">
+                  <div>
+                    <p className="font-semibold text-white">{transaction.description}</p>
+                    <p className="text-xs text-gray-400">{transaction.type}</p>
+                  </div>
+                  <p className="font-bold text-white">{formatCurrency(transaction.amount)}</p>
+                </div>
+              </button>
+            ))}
+            <button
+              onClick={() => setSelectedDayTransactions([])}
+              className="w-full py-2 rounded-lg bg-card-hover/30 hover:bg-card-hover/50 text-gray-400 transition"
+            >
+              Cancelar
+            </button>
+          </div>
+        </div>
+      )}
 
       <EditTransactionModal
         isOpen={editingTransaction !== null}
