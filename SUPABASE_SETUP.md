@@ -1,6 +1,8 @@
 # Supabase Setup Guide
 
-Integração opcional com Supabase para sincronização multi-dispositivo. O app usa **localStorage offline-first** com sync assíncrono para Supabase.
+**Integração OBRIGATÓRIA com Supabase** para autenticação e sincronização multi-dispositivo. O app requer login com Supabase Auth — não há modo offline sem autenticação.
+
+O app usa **localStorage offline-first** como cache local e **Supabase Postgres** como fonte de verdade, com sync automático após login.
 
 ## 1. Criar Projeto no Supabase
 
@@ -39,6 +41,7 @@ create table tags (
   user_id uuid references auth.users(id) on delete cascade not null,
   name text not null,
   color text not null,
+  order integer default 0 not null,
   created_at timestamp default now() not null
 );
 
@@ -86,7 +89,7 @@ create policy "Users can only delete their own tags" on tags
 
 **⚠️ Importante**: Use apenas a chave `anon` (public) no frontend. A chave `service_role` é só para backend.
 
-## 4. Configurar `.env.local`
+## 4. Configurar `.env.local` **(OBRIGATÓRIO)**
 
 1. Na raiz do projeto, crie `.env.local`:
    ```
@@ -94,8 +97,9 @@ create policy "Users can only delete their own tags" on tags
    VITE_SUPABASE_ANON_KEY=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...
    ```
 
-2. **Substitua** com suas credenciais copiadas
-3. O arquivo `.gitignore` já exclui `.env.local` — não será commitado
+2. **Substitua** com suas credenciais copiadas (do Supabase Settings → API)
+3. **CRÍTICO**: sem estas variáveis, o app **não iniciará** (Auth é obrigatório)
+4. O arquivo `.gitignore` já exclui `.env.local` — não será commitado
 
 ## 5. Testar no App
 
@@ -130,17 +134,58 @@ npm run dev
 - [ ] **Testes de RLS** — inserir como user A, tentar ler como user B (deve falhar)
 - [ ] **Corrigir bug de fuso horário** — ver `SECURITY.md` (affects date storage)
 
-## Desabilitar Supabase (voltar para localStorage)
+## 7. Verificar Row Level Security (RLS) — Teste Manual
 
-Se quiser usar só localStorage sem sync:
+**CRÍTICO**: sem RLS, qualquer usuário autenticado lê/escreve dados de qualquer outro usuário.
 
-1. Delete ou comente em `.env.local`:
-   ```
-   # VITE_SUPABASE_URL=...
-   # VITE_SUPABASE_ANON_KEY=...
-   ```
-2. Reinicie: `npm run dev`
-3. App continuará 100% funcional offline
+### Procedimento de verificação:
+1. Crie **duas contas de teste** via sign up no app:
+   - **Account A**: `user-a@test.com` / senha
+   - **Account B**: `user-b@test.com` / senha
+
+2. **Logado como Account A**:
+   - Adicione uma transação (ex: "Salário R$ 5000")
+   - Verifique no Supabase SQL Editor:
+     ```sql
+     select id, description, amount, user_id from transactions where description = 'Salário';
+     ```
+   - Deve aparecer com `user_id = A`
+
+3. **Logado como Account B**:
+   - Vá para Browser do Supabase e execute:
+     ```sql
+     select id, description, user_id from transactions;
+     ```
+   - **Esperado**: resultado vazio (não vê dados de A)
+   - **Erro**: se vir dados de A, RLS não está funcionando!
+
+4. **Teste de insert bloqueado**:
+   - Como Account B, no SQL Editor (sem Auth context):
+     ```sql
+     insert into transactions (user_id, type, amount, description, date)
+     values ('00000000-0000-0000-0000-000000000000', 'entrada', 100, 'hack', now());
+     ```
+   - **Esperado**: erro de RLS policy
+   - **Aceito**: Postgres recusa se o UUID não existir
+
+### Se RLS não funciona:
+1. Verifique se as 8 policies estão **habilitadas** (ícone de cadeado verde) em Settings → Security → Policies
+2. Recrie as policies seguindo a seção 2
+3. Logout completo e login novamente (limpar cache de session)
+
+## 8. Rate Limiting (Proteção contra Brute-Force)
+
+Por padrão, Supabase Auth tem proteção básica contra brute-force. Para customizar:
+
+1. No painel do Supabase, vá para **Authentication → Settings → Rate Limiting**
+2. Recomendado:
+   - **Requests per minute**: 10 (limite de tentativas de login por IP/email)
+   - **Enable CAPTCHAs**: Ativar para maiores níveis de segurança
+3. Salve as alterações
+
+Essa proteção é automática e não requer código no frontend.
+
+---
 
 ## Troubleshooting
 

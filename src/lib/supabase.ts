@@ -14,6 +14,17 @@ export const supabase = SUPABASE_URL && SUPABASE_ANON_KEY
 
 export const isSupabaseEnabled = !!supabase;
 
+// Helper to get current user ID using Supabase's built-in session
+const getUserId = async (): Promise<string | null> => {
+  if (!supabase) return null;
+  try {
+    const { data } = await supabase.auth.getSession();
+    return data?.session?.user?.id || null;
+  } catch {
+    return null;
+  }
+};
+
 // Database operations
 export async function fetchTransactions(): Promise<Transaction[]> {
   if (!supabase) return [];
@@ -39,7 +50,7 @@ export async function fetchTags(): Promise<Tag[]> {
     const { data, error } = await supabase
       .from('tags')
       .select('*')
-      .order('created_at', { ascending: true });
+      .order('order', { ascending: true });
 
     if (error) throw error;
     return data || [];
@@ -52,10 +63,16 @@ export async function fetchTags(): Promise<Tag[]> {
 export async function insertTransaction(transaction: Omit<Transaction, 'id' | 'created_at'>) {
   if (!supabase) return null;
 
+  const userId = await getUserId();
+  if (!userId) {
+    console.error('Cannot sync transaction: user not authenticated');
+    return null;
+  }
+
   try {
     const { data, error } = await supabase
       .from('transactions')
-      .insert([transaction])
+      .insert([{ ...transaction, user_id: userId }])
       .select()
       .single();
 
@@ -70,11 +87,18 @@ export async function insertTransaction(transaction: Omit<Transaction, 'id' | 'c
 export async function updateTransactionRecord(id: string, updates: Partial<Transaction>) {
   if (!supabase) return null;
 
+  const userId = await getUserId();
+  if (!userId) {
+    console.error('Cannot sync transaction: user not authenticated');
+    return null;
+  }
+
   try {
     const { data, error } = await supabase
       .from('transactions')
       .update(updates)
       .eq('id', id)
+      .eq('user_id', userId)
       .select()
       .single();
 
@@ -89,11 +113,18 @@ export async function updateTransactionRecord(id: string, updates: Partial<Trans
 export async function deleteTransactionRecord(id: string) {
   if (!supabase) return false;
 
+  const userId = await getUserId();
+  if (!userId) {
+    console.error('Cannot sync transaction: user not authenticated');
+    return false;
+  }
+
   try {
     const { error } = await supabase
       .from('transactions')
       .delete()
-      .eq('id', id);
+      .eq('id', id)
+      .eq('user_id', userId);
 
     if (error) throw error;
     return true;
@@ -106,10 +137,16 @@ export async function deleteTransactionRecord(id: string) {
 export async function insertTag(tag: Omit<Tag, 'id'>) {
   if (!supabase) return null;
 
+  const userId = await getUserId();
+  if (!userId) {
+    console.error('Cannot sync tag: user not authenticated');
+    return null;
+  }
+
   try {
     const { data, error } = await supabase
       .from('tags')
-      .insert([tag])
+      .insert([{ ...tag, user_id: userId }])
       .select()
       .single();
 
@@ -124,11 +161,18 @@ export async function insertTag(tag: Omit<Tag, 'id'>) {
 export async function updateTagRecord(id: string, updates: Partial<Tag>) {
   if (!supabase) return null;
 
+  const userId = await getUserId();
+  if (!userId) {
+    console.error('Cannot sync tag: user not authenticated');
+    return null;
+  }
+
   try {
     const { data, error } = await supabase
       .from('tags')
       .update(updates)
       .eq('id', id)
+      .eq('user_id', userId)
       .select()
       .single();
 
@@ -143,11 +187,18 @@ export async function updateTagRecord(id: string, updates: Partial<Tag>) {
 export async function deleteTagRecord(id: string) {
   if (!supabase) return false;
 
+  const userId = await getUserId();
+  if (!userId) {
+    console.error('Cannot sync tag: user not authenticated');
+    return false;
+  }
+
   try {
     const { error } = await supabase
       .from('tags')
       .delete()
-      .eq('id', id);
+      .eq('id', id)
+      .eq('user_id', userId);
 
     if (error) throw error;
     return true;

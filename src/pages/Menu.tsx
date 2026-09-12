@@ -1,5 +1,8 @@
 import { useState, useEffect } from 'react';
-import { Moon, Sun, Download, Trash2, Info } from 'lucide-react';
+import { Moon, Sun, Download, Trash2, Info, LogOut } from 'lucide-react';
+import { useNavigate } from 'react-router-dom';
+import { signOut } from '../lib/auth';
+import { useAuthStore } from '../store/authStore';
 import { useFinancasStore } from '../store';
 
 const getInitialTheme = (): 'light' | 'dark' | 'system' => {
@@ -22,6 +25,9 @@ const applyTheme = (theme: 'light' | 'dark' | 'system') => {
 export default function Menu() {
   const [showClearConfirm, setShowClearConfirm] = useState(false);
   const [theme, setTheme] = useState<'light' | 'dark' | 'system'>(getInitialTheme);
+  const [loggingOut, setLoggingOut] = useState(false);
+  const navigate = useNavigate();
+  const { clearSession } = useAuthStore();
 
   useEffect(() => {
     applyTheme(theme);
@@ -65,6 +71,22 @@ export default function Menu() {
         // ignore
       }
       setShowClearConfirm(false);
+    }
+  };
+
+  const handleLogout = async () => {
+    setLoggingOut(true);
+    try {
+      const { error } = await signOut();
+      if (error) {
+        console.error('Logout error:', error);
+      } else {
+        clearSession();
+        useFinancasStore.setState({ transactions: [], tags: [] });
+        navigate('/');
+      }
+    } finally {
+      setLoggingOut(false);
     }
   };
 
@@ -172,6 +194,18 @@ export default function Menu() {
                 <p className="text-xs text-gray-500 mt-1">Gerenciador de transações pessoal</p>
               </div>
             </div>
+          </div>
+
+          {/* Logout Section */}
+          <div className="border-t border-card-hover/20 pt-6">
+            <button
+              onClick={handleLogout}
+              disabled={loggingOut}
+              className="w-full py-3 px-4 rounded-lg bg-card-hover/30 border border-card-hover/50 text-gray-300 hover:text-white hover:border-gray-400 transition text-left font-semibold flex items-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
+            >
+              <LogOut className="h-5 w-5" />
+              {loggingOut ? 'Saindo...' : 'Sair'}
+            </button>
           </div>
         </div>
       </div>

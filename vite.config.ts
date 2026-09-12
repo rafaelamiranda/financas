@@ -4,6 +4,7 @@ import { defineConfig } from 'vite'
 import { VitePWA } from 'vite-plugin-pwa'
 
 // https://vite.dev/config/
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
 export default defineConfig({
   plugins: [
     react(),
@@ -50,7 +51,7 @@ export default defineConfig({
               cacheName: 'supabase-api-cache',
               expiration: {
                 maxEntries: 50,
-                maxAgeSeconds: 300, // 5 minutes
+                maxAgeSeconds: 300,
               },
             },
           },
@@ -58,4 +59,9 @@ export default defineConfig({
       },
     }),
   ],
-})
+  test: {
+    globals: true,
+    environment: 'jsdom',
+    setupFiles: './src/test/setup.ts',
+  },
+} as any)

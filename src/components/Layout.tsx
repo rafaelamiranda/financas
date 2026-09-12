@@ -3,6 +3,8 @@ import { Outlet, useLocation, useNavigate } from 'react-router-dom';
 import { LayoutGrid, Sigma, Tag, Menu as MenuIcon, Plus, CalendarDays, TrendingUp, Wallet, PinOff, Pin } from 'lucide-react';
 import { Sidebar, SidebarBody, SidebarLink } from './ui/sidebar';
 import AddModal from './AddModal';
+import Toast from './ui/Toast';
+import MigrationPrompt from './MigrationPrompt';
 
 export default function Layout() {
   const [showAddModal, setShowAddModal] = useState(false);
@@ -83,6 +85,7 @@ export default function Layout() {
               onClick={toggleSidebarFixed}
               className="w-full py-2 px-2 rounded-lg text-sm text-gray-400 hover:text-white hover:bg-card-hover/50 transition flex items-center justify-center gap-2 overflow-hidden"
               title={sidebarFixed ? 'Desafixar sidebar' : 'Fixar sidebar'}
+              aria-label={sidebarFixed ? 'Desafixar sidebar' : 'Fixar sidebar'}
             >
               {sidebarFixed ? <Pin className="h-5 w-5 shrink-0" /> : <PinOff className="h-5 w-5 shrink-0" />}
               {open && <span className="whitespace-pre text-xs">{sidebarFixed ? 'fixado' : 'desafixar'}</span>}
@@ -122,6 +125,8 @@ export default function Layout() {
       </main>
 
       <AddModal isOpen={showAddModal} onClose={() => setShowAddModal(false)} />
+      <Toast />
+      <MigrationPrompt />
     </div>
   );
 }

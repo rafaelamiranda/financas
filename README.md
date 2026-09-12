@@ -10,8 +10,8 @@ App mobile-first de controle financeiro pessoal, estilo "planilha de saldo diár
 - **Zustand** — estado global com persistência localStorage
 - **Framer Motion** — animações (sidebar, bottom sheet do modal)
 - **lucide-react** — ícones
-- **Supabase JS** — cliente para sync opcional com backend
-- **Persistência**: `localStorage` (offline-first) com sync assíncrono para Supabase (opcional)
+- **Supabase Auth + Postgres** — autenticação obrigatória e backend de transações/tags
+- **Persistência**: `localStorage` (cache offline-first) com sync assíncrono para Supabase (obrigatório após auth)
 
 ## Estrutura
 
@@ -88,18 +88,27 @@ Tag { id, name, color }
 
 ---
 
-## Banco de dados: Supabase (planejado)
+## Autenticação: Supabase Auth (Implementado — Fase D)
 
-A persistência hoje é só `localStorage` (por navegador, sem sync). O plano é migrar para **Supabase** (Postgres + Auth + Row Level Security), permitindo sync multi-dispositivo.
+**Autenticação é OBRIGATÓRIA** — o app não funciona sem login via Supabase.
 
-### O que isso implica
-- Tabelas `transactions` e `tags` com `user_id` (FK para `auth.users`)
-- **RLS obrigatório** em ambas as tabelas (`user_id = auth.uid()`) — sem isso, qualquer usuário autenticado lê/escreve dados de qualquer outro
-- Autenticação via Supabase Auth (email/senha ou magic link)
-- Client `@supabase/supabase-js` substituindo o `store/index.ts` atual (ou mantendo Zustand como cache local + Supabase como fonte de verdade)
-- Migração de dados existentes do `localStorage` para a conta do usuário no primeiro login
+### Implementado em Fase D:
+- ✅ **Supabase Auth** — sign up/sign in via email + senha
+- ✅ **RLS (Row Level Security)** em `transactions` e `tags` — cada usuário só vê seus dados (`user_id = auth.uid()`)
+- ✅ **Pull-on-load** — transações e tags são puxadas do Supabase ao fazer login
+- ✅ **Migração de dados** — dados do localStorage são migrados para a conta do usuário no primeiro login (opcional)
+- ✅ **Logout** — botão "Sair" em Configurações limpa a sessão e retorna ao login
+- ✅ **AuthGate** — todas as rotas protegidas; sem auth, só tela de login é visível
 
-Ver detalhes de risco em `SECURITY.md`.
+### Fluxo de autenticação:
+1. Usuário faz sign up ou login via `src/pages/Login.tsx`
+2. Supabase valida credenciais e retorna session
+3. `useAuthStore` (Zustand) armazena session em memória
+4. App puxaa transações/tags do Supabase via RLS (apenas seus dados)
+5. Dados são cacheados em `localStorage` para modo offline
+6. Qualquer mudança é sincronizada com Supabase (com retry se offline)
+
+Ver detalhes de segurança em `SECURITY.md` e `SUPABASE_SETUP.md`.
 
 ---
 
@@ -117,11 +126,11 @@ Ver detalhes de risco em `SECURITY.md`.
 - [ ] **Date picker customizado** (dd/mm/aa) — hoje usa `<input type="date">` nativo do navegador
 
 ### Infraestrutura / técnico
-- [ ] **Migração para Supabase** (auth + Postgres + RLS) — ver seção acima
-- [ ] **Testes automatizados** — não há nenhum teste no projeto ainda
+- [x] **Autenticação e Backend** (Supabase Auth + Postgres + RLS) — ✅ Implementado em Fase D
+- [ ] **Testes automatizados** — infraestrutura Vitest em lugar, mas testes ainda não implementados
 - [ ] **Validação de inputs** — formulário de lançamento não valida valor máximo, datas inválidas, etc.
 - [ ] **Acessibilidade** — falta auditoria de contraste, `aria-label`s em botões só-ícone, navegação por teclado no modal
-- [ ] **PWA / instalável** — sem manifest.json nem service worker para uso offline real
+- [x] **PWA / instalável** — ✅ Manifest + service worker implementados em Fase C
 - [ ] **Tratamento de erros de storage** — `localStorage` cheio ou bloqueado (modo privado) falha silenciosamente (só `console.error`)
 
 Ver `SECURITY.md` para o levantamento de gargalos de performance e riscos de segurança.

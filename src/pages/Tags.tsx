@@ -1,7 +1,14 @@
 import { useState } from 'react';
+import type { CSSProperties, ReactNode } from 'react';
+import { DndContext, closestCenter, PointerSensor, useSensor, useSensors } from '@dnd-kit/core';
+import type { DragEndEvent } from '@dnd-kit/core';
+import { SortableContext, verticalListSortingStrategy, useSortable, arrayMove } from '@dnd-kit/sortable';
+import { CSS } from '@dnd-kit/utilities';
+import { GripVertical } from 'lucide-react';
 import { useFinancasStore } from '../store';
 import { formatCurrency, getMonthName } from '../utils';
 import { TAG_COLOR_PRESETS } from '../types';
+import type { Tag } from '../types';
 
 export default function Tags() {
   const [currentDate, setCurrentDate] = useState(new Date());
@@ -19,6 +26,9 @@ export default function Tags() {
   const addTag = useFinancasStore((state) => state.addTag);
   const deleteTag = useFinancasStore((state) => state.deleteTag);
   const updateTag = useFinancasStore((state) => state.updateTag);
+  const reorderTags = useFinancasStore((state) => state.reorderTags);
+
+  const sensors = useSensors(useSensor(PointerSensor, { activationConstraint: { distance: 5 } }));
 
   const handlePrevMonth = () => {
     setCurrentDate(new Date(currentDate.getFullYear(), currentDate.getMonth() - 1));
@@ -77,9 +87,25 @@ export default function Tags() {
       .reduce((sum, t) => sum + t.amount, 0);
   };
 
-  const filteredTags = tags.filter((tag) =>
+  const sortedTags = [...tags].sort((a, b) => (a.order ?? 0) - (b.order ?? 0));
+
+  const filteredTags = sortedTags.filter((tag) =>
     tag.name.toLowerCase().includes(searchQuery.toLowerCase())
   );
+
+  const isFiltering = searchQuery.trim().length > 0;
+
+  const handleDragEnd = (event: DragEndEvent) => {
+    const { active, over } = event;
+    if (!over || active.id === over.id) return;
+
+    const oldIndex = sortedTags.findIndex((t) => t.id === active.id);
+    const newIndex = sortedTags.findIndex((t) => t.id === over.id);
+    if (oldIndex === -1 || newIndex === -1) return;
+
+    const reordered = arrayMove(sortedTags, oldIndex, newIndex);
+    reorderTags(reordered.map((t) => t.id));
+  };
 
   return (
     <div className="w-full h-full flex flex-col">
@@ -137,65 +163,44 @@ export default function Tags() {
               </p>
               <p className="text-sm mt-2">Crie uma nova tag para começar</p>
             </div>
-          ) : (
+          ) : isFiltering ? (
             <div className="space-y-2">
-              {filteredTags.map((tag) => {
-                const total = getTagTotal(tag.id);
-                const isZero = total === 0;
-
-                return (
-                  <div
-                    key={tag.id}
-                    className={`flex items-center justify-between p-4 rounded-lg transition ${
-                      isZero ? 'bg-card-hover/20 opacity-50' : 'bg-card-hover/30 hover:bg-card-hover/50'
-                    }`}
-                  >
-                    <div className="flex items-center gap-3 flex-1">
-                      <div
-                        className="w-6 h-6 rounded-full border-2"
-                        style={{ borderColor: tag.color, backgroundColor: tag.color + '20' }}
-                      />
-                      <span className="font-semibold text-white">{tag.name}</span>
-                    </div>
-                    <div className="flex items-center gap-4">
-                      <span
-                        className="font-bold text-sm"
-                        style={{ color: tag.color }}
-                      >
-                        {formatCurrency(total)}
-                      </span>
-                      <div className="relative">
-                        <button
-                          onClick={() => setShowMenu(showMenu === tag.id ? null : tag.id)}
-                          className="text-gray-400 hover:text-white transition p-1"
-                        >
-                          ⋮
-                        </button>
-                        {showMenu === tag.id && (
-                          <div className="absolute right-0 top-full mt-1 bg-card-hover border border-card-hover/50 rounded-lg shadow-lg z-10 min-w-32">
-                            <button
-                              onClick={() => startEditTag(tag.id)}
-                              className="block w-full text-left px-4 py-2 text-sm text-gray-300 hover:text-white hover:bg-card-hover/50 transition first:rounded-t-lg"
-                            >
-                              Editar
-                            </button>
-                            <button
-                              onClick={() => {
-                                deleteTag(tag.id);
-                                setShowMenu(null);
-                              }}
-                              className="block w-full text-left px-4 py-2 text-sm text-red-400 hover:text-red-300 hover:bg-red-900/20 transition last:rounded-b-lg"
-                            >
-                              Deletar
-                            </button>
-                          </div>
-                        )}
-                      </div>
-                    </div>
-                  </div>
-                );
-              })}
+              {filteredTags.map((tag) => (
+                <TagRow
+                  key={tag.id}
+                  tag={tag}
+                  total={getTagTotal(tag.id)}
+                  showMenu={showMenu === tag.id}
+                  onToggleMenu={() => setShowMenu(showMenu === tag.id ? null : tag.id)}
+                  onEdit={() => startEditTag(tag.id)}
+                  onDelete={() => {
+                    deleteTag(tag.id);
+                    setShowMenu(null);
+                  }}
+                />
+              ))}
             </div>
+          ) : (
+            <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={handleDragEnd}>
+              <SortableContext items={filteredTags.map((t) => t.id)} strategy={verticalListSortingStrategy}>
+                <div className="space-y-2">
+                  {filteredTags.map((tag) => (
+                    <SortableTagRow
+                      key={tag.id}
+                      tag={tag}
+                      total={getTagTotal(tag.id)}
+                      showMenu={showMenu === tag.id}
+                      onToggleMenu={() => setShowMenu(showMenu === tag.id ? null : tag.id)}
+                      onEdit={() => startEditTag(tag.id)}
+                      onDelete={() => {
+                        deleteTag(tag.id);
+                        setShowMenu(null);
+                      }}
+                    />
+                  ))}
+                </div>
+              </SortableContext>
+            </DndContext>
           )}
         </div>
       </div>
@@ -346,4 +351,92 @@ export default function Tags() {
       )}
     </div>
   );
+}
+
+interface TagRowProps {
+  tag: Tag;
+  total: number;
+  showMenu: boolean;
+  onToggleMenu: () => void;
+  onEdit: () => void;
+  onDelete: () => void;
+  dragHandle?: ReactNode;
+  setNodeRef?: (node: HTMLElement | null) => void;
+  style?: CSSProperties;
+}
+
+function TagRow({ tag, total, showMenu, onToggleMenu, onEdit, onDelete, dragHandle, setNodeRef, style }: TagRowProps) {
+  const isZero = total === 0;
+
+  return (
+    <div
+      ref={setNodeRef}
+      style={style}
+      className={`flex items-center justify-between p-4 rounded-lg transition ${
+        isZero ? 'bg-card-hover/20 opacity-50' : 'bg-card-hover/30 hover:bg-card-hover/50'
+      }`}
+    >
+      <div className="flex items-center gap-3 flex-1">
+        {dragHandle}
+        <div
+          className="w-6 h-6 rounded-full border-2"
+          style={{ borderColor: tag.color, backgroundColor: tag.color + '20' }}
+        />
+        <span className="font-semibold text-white">{tag.name}</span>
+      </div>
+      <div className="flex items-center gap-4">
+        <span className="font-bold text-sm" style={{ color: tag.color }}>
+          {formatCurrency(total)}
+        </span>
+        <div className="relative">
+          <button
+            onClick={onToggleMenu}
+            aria-label="Opções da tag"
+            className="text-gray-400 hover:text-white transition p-1"
+          >
+            ⋮
+          </button>
+          {showMenu && (
+            <div className="absolute right-0 top-full mt-1 bg-card-hover border border-card-hover/50 rounded-lg shadow-lg z-10 min-w-32">
+              <button
+                onClick={onEdit}
+                className="block w-full text-left px-4 py-2 text-sm text-gray-300 hover:text-white hover:bg-card-hover/50 transition first:rounded-t-lg"
+              >
+                Editar
+              </button>
+              <button
+                onClick={onDelete}
+                className="block w-full text-left px-4 py-2 text-sm text-red-400 hover:text-red-300 hover:bg-red-900/20 transition last:rounded-b-lg"
+              >
+                Deletar
+              </button>
+            </div>
+          )}
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function SortableTagRow(props: Omit<TagRowProps, 'dragHandle' | 'setNodeRef' | 'style'>) {
+  const { attributes, listeners, setNodeRef, transform, transition } = useSortable({ id: props.tag.id });
+
+  const style: CSSProperties = {
+    transform: CSS.Transform.toString(transform),
+    transition,
+  };
+
+  const dragHandle = (
+    <button
+      type="button"
+      aria-label="Reordenar tag"
+      className="text-gray-500 hover:text-white cursor-grab active:cursor-grabbing p-1 touch-none"
+      {...attributes}
+      {...listeners}
+    >
+      <GripVertical className="h-4 w-4" />
+    </button>
+  );
+
+  return <TagRow {...props} dragHandle={dragHandle} setNodeRef={setNodeRef} style={style} />;
 }

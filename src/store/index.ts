@@ -2,6 +2,7 @@ import { create } from 'zustand';
 import type { Transaction, Tag, TransactionType } from '../types';
 import { parseLocalDate } from '../utils';
 import { isSupabaseEnabled, insertTransaction as insertSupabaseTransaction, updateTransactionRecord, deleteTransactionRecord, insertTag as insertSupabaseTag, updateTagRecord, deleteTagRecord } from '../lib/supabase';
+import { useToastStore } from './toastStore';
 
 interface FinancasStore {
   transactions: Transaction[];
@@ -9,9 +10,10 @@ interface FinancasStore {
   addTransaction: (transaction: Omit<Transaction, 'id' | 'created_at'>) => void;
   deleteTransaction: (id: string) => void;
   updateTransaction: (id: string, transaction: Partial<Transaction>) => void;
-  addTag: (tag: Omit<Tag, 'id'>) => void;
+  addTag: (tag: Omit<Tag, 'id' | 'order'>) => void;
   deleteTag: (id: string) => void;
   updateTag: (id: string, tag: Partial<Tag>) => void;
+  reorderTags: (orderedIds: string[]) => void;
   getTransactionsByMonth: (date: Date) => Transaction[];
   getTransactionsByType: (type: TransactionType, date?: Date) => Transaction[];
 }
@@ -21,6 +23,13 @@ const loadFromStorage = (): { transactions: Transaction[]; tags: Tag[] } => {
     const stored = localStorage.getItem('financas_data');
     if (stored) {
       const data = JSON.parse(stored);
+      const rawTags: Tag[] = data.tags || [];
+      // Migrate tags missing `order` (added in Fase A2) by assigning sequential index-based order.
+      const needsMigration = rawTags.some((t) => typeof t.order !== 'number');
+      const tags = needsMigration
+        ? rawTags.map((t, index) => ({ ...t, order: typeof t.order === 'number' ? t.order : index }))
+        : rawTags;
+
       return {
         transactions: data.transactions.map((t: any) => {
           const dateStr = typeof t.date === 'string' ? t.date.split('T')[0] : t.date;
@@ -34,7 +43,7 @@ const loadFromStorage = (): { transactions: Transaction[]; tags: Tag[] } => {
             recurrence_end_date: recurrenceEndDateStr ? parseLocalDate(recurrenceEndDateStr) : undefined,
           };
         }),
-        tags: data.tags,
+        tags,
       };
     }
   } catch (e) {
@@ -43,15 +52,30 @@ const loadFromStorage = (): { transactions: Transaction[]; tags: Tag[] } => {
   return { transactions: [], tags: [] };
 };
 
-const saveToStorage = (transactions: Transaction[], tags: Tag[]) => {
+const getStorageErrorMessage = (e: unknown): string => {
+  if (e instanceof DOMException && e.name === 'QuotaExceededError') {
+    return 'Armazenamento cheio. Não foi possível salvar suas alterações.';
+  }
+  return 'Não foi possível salvar. Verifique se o modo privado do navegador está bloqueando o armazenamento.';
+};
+
+/**
+ * Persists to localStorage. Returns true on success, false on failure
+ * (and reports the failure to the toast store) so callers can react.
+ */
+const saveToStorage = (transactions: Transaction[], tags: Tag[]): boolean => {
   try {
     localStorage.setItem('financas_data', JSON.stringify({ transactions, tags }));
+    return true;
   } catch (e) {
     console.error('Failed to save to storage:', e);
+    useToastStore.getState().addToast(getStorageErrorMessage(e), 'error');
+    return false;
   }
 };
 
-const generateId = () => Math.random().toString(36).substring(2, 11);
+// crypto.randomUUID() is required so ids stay compatible with Supabase's `uuid` primary key columns.
+const generateId = () => crypto.randomUUID();
 
 export const useFinancasStore = create<FinancasStore>((set, get) => {
   const initialData = loadFromStorage();
@@ -105,11 +129,14 @@ export const useFinancasStore = create<FinancasStore>((set, get) => {
     },
 
     addTag: (tag) => {
+      const existingTags = get().tags;
+      const maxOrder = existingTags.reduce((max, t) => Math.max(max, t.order ?? 0), -1);
       const newTag: Tag = {
         ...tag,
         id: generateId(),
+        order: maxOrder + 1,
       };
-      const tags = [...get().tags, newTag];
+      const tags = [...existingTags, newTag];
       set({ tags });
       saveToStorage(get().transactions, tags);
 
@@ -148,6 +175,26 @@ export const useFinancasStore = create<FinancasStore>((set, get) => {
           console.error('Failed to update tag in Supabase:', err);
         });
       }
+    },
+
+    reorderTags: (orderedIds) => {
+      const tagsById = new Map(get().tags.map((t) => [t.id, t]));
+      const tags = orderedIds
+        .map((id, index) => {
+          const tag = tagsById.get(id);
+          return tag ? { ...tag, order: index } : undefined;
+        })
+        .filter((t): t is Tag => t !== undefined);
+
+      // Preserve any tags not included in orderedIds (defensive, shouldn't normally happen)
+      const reorderedIds = new Set(orderedIds);
+      const remaining = get().tags.filter((t) => !reorderedIds.has(t.id));
+
+      const nextTags = [...tags, ...remaining];
+      set({ tags: nextTags });
+      saveToStorage(get().transactions, nextTags);
+
+      // TODO(Fase D): sync tag order to Supabase once Auth/backend lands (needs `order` column + user_id scoping).
     },
 
     getTransactionsByMonth: (date) => {

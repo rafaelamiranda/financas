@@ -1,10 +1,14 @@
-import { useState } from 'react';
+import { useRef, useState } from 'react';
 import { AnimatePresence, motion } from 'framer-motion';
 import { ArrowDownLeft, ArrowUpRight, ShoppingBag, PiggyBank, CreditCard, X, ChevronLeft, Plus, Check } from 'lucide-react';
 import type { TransactionType, RecurrenceType } from '../types';
 import { CATEGORY_COLORS, CATEGORY_LABELS, TAG_COLOR_PRESETS } from '../types';
 import { useFinancasStore } from '../store';
 import { formatCurrency, parseLocalDate } from '../utils';
+import { useFocusTrap } from '../hooks/useFocusTrap';
+import DatePicker from './ui/DatePicker';
+
+const DESCRIPTION_MAX_LENGTH = 120;
 
 interface AddModalProps {
   isOpen: boolean;
@@ -41,8 +45,13 @@ export default function AddModal({ isOpen, onClose }: AddModalProps) {
   const [newTagColor, setNewTagColor] = useState(TAG_COLOR_PRESETS[0]);
   const [recurrence, setRecurrence] = useState<RecurrenceType>('none');
   const [recurrenceEndDate, setRecurrenceEndDate] = useState('');
+  const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({});
 
   const { addTransaction, tags, addTag } = useFinancasStore();
+  const sortedTags = [...tags].sort((a, b) => (a.order ?? 0) - (b.order ?? 0));
+
+  const modalRef = useRef<HTMLDivElement>(null);
+  useFocusTrap(modalRef, isOpen, onClose);
 
   const toggleTag = (tagId: string) => {
     setSelectedTagIds((prev) =>
@@ -82,25 +91,36 @@ export default function AddModal({ isOpen, onClose }: AddModalProps) {
 
   const handleSubmit = () => {
     const numAmount = parseFloat(amount.replace(',', '.'));
-    const selectedDate = parseLocalDate(date);
     const now = new Date();
     const oneYearAgo = new Date(now.getFullYear() - 1, now.getMonth(), now.getDate());
     const oneYearFromNow = new Date(now.getFullYear() + 1, now.getMonth(), now.getDate());
 
-    if (numAmount <= 0) {
-      alert('Valor deve ser maior que 0');
+    const errors: Record<string, string> = {};
+
+    if (!date) {
+      errors.date = 'Data é obrigatória';
+    }
+
+    if (!amount || Number.isNaN(numAmount) || numAmount <= 0) {
+      errors.amount = 'Valor deve ser maior que 0';
+    } else if (numAmount > 999999.99) {
+      errors.amount = 'Valor não pode ser maior que R$ 999.999,99';
+    }
+
+    if (date && !errors.date) {
+      const selectedDate = parseLocalDate(date);
+      if (selectedDate < oneYearAgo || selectedDate > oneYearFromNow) {
+        errors.date = 'Data deve estar dentro de 1 ano no passado ou futuro';
+      }
+    }
+
+    if (Object.keys(errors).length > 0) {
+      setFieldErrors(errors);
       return;
     }
 
-    if (numAmount > 999999.99) {
-      alert('Valor não pode ser maior que R$ 999.999,99');
-      return;
-    }
-
-    if (selectedDate < oneYearAgo || selectedDate > oneYearFromNow) {
-      alert('Data deve estar dentro de 1 ano no passado ou futuro');
-      return;
-    }
+    setFieldErrors({});
+    const selectedDate = parseLocalDate(date);
 
     addTransaction({
       type: selectedType,
@@ -133,6 +153,10 @@ export default function AddModal({ isOpen, onClose }: AddModalProps) {
           onClick={onClose}
         >
           <motion.div
+            ref={modalRef}
+            role="dialog"
+            aria-modal="true"
+            aria-label={step === 'select' ? 'Selecione o tipo' : `Adicionar ${CATEGORY_LABELS[selectedType]}`}
             initial={{ y: '100%', opacity: 0 }}
             animate={{ y: 0, opacity: 1 }}
             exit={{ y: '100%', opacity: 0 }}
@@ -142,6 +166,7 @@ export default function AddModal({ isOpen, onClose }: AddModalProps) {
           >
             <button
               onClick={onClose}
+              aria-label="Fechar"
               className="absolute top-4 right-4 text-gray-400 hover:text-white"
             >
               <X className="h-5 w-5" />
@@ -201,14 +226,23 @@ export default function AddModal({ isOpen, onClose }: AddModalProps) {
                   <div className="mt-2 text-center text-sm text-gray-400">
                     {formatCurrency(parseFloat(amount.replace(',', '.')) || 0)}
                   </div>
+                  {fieldErrors.amount && (
+                    <p className="mt-1 text-xs text-red-400">{fieldErrors.amount}</p>
+                  )}
                 </div>
 
                 <div>
-                  <label className="text-sm text-gray-400 block mb-2">Descrição (opcional)</label>
+                  <div className="flex items-center justify-between mb-2">
+                    <label className="text-sm text-gray-400">Descrição (opcional)</label>
+                    <span className="text-xs text-gray-500">
+                      {description.length}/{DESCRIPTION_MAX_LENGTH}
+                    </span>
+                  </div>
                   <input
                     type="text"
                     value={description}
-                    onChange={(e) => setDescription(e.target.value)}
+                    onChange={(e) => setDescription(e.target.value.slice(0, DESCRIPTION_MAX_LENGTH))}
+                    maxLength={DESCRIPTION_MAX_LENGTH}
                     placeholder={CATEGORY_LABELS[selectedType]}
                     className="w-full bg-card-hover border border-card-hover/50 rounded-lg px-4 py-2 text-white placeholder-gray-500 focus:outline-none focus:border-entrada"
                   />
@@ -216,18 +250,16 @@ export default function AddModal({ isOpen, onClose }: AddModalProps) {
 
                 <div>
                   <label className="text-sm text-gray-400 block mb-2">Data</label>
-                  <input
-                    type="date"
-                    value={date}
-                    onChange={(e) => setDate(e.target.value)}
-                    className="w-full bg-card-hover border border-card-hover/50 rounded-lg px-4 py-2 text-white focus:outline-none focus:border-entrada"
-                  />
+                  <DatePicker value={date} onChange={setDate} />
+                  {fieldErrors.date && (
+                    <p className="mt-1 text-xs text-red-400">{fieldErrors.date}</p>
+                  )}
                 </div>
 
                 <div>
                   <label className="text-sm text-gray-400 block mb-2">Tags (opcional)</label>
                   <div className="flex flex-wrap gap-2">
-                    {tags.map((tag) => {
+                    {sortedTags.map((tag) => {
                       const selected = selectedTagIds.includes(tag.id);
                       return (
                         <button
@@ -317,12 +349,7 @@ export default function AddModal({ isOpen, onClose }: AddModalProps) {
                   {recurrence === 'fixed_until' && (
                     <div className="mt-3">
                       <label className="text-sm text-gray-400 block mb-2">Até quando?</label>
-                      <input
-                        type="date"
-                        value={recurrenceEndDate}
-                        onChange={(e) => setRecurrenceEndDate(e.target.value)}
-                        className="w-full bg-card-hover border border-card-hover/50 rounded-lg px-4 py-2 text-white focus:outline-none focus:border-entrada"
-                      />
+                      <DatePicker value={recurrenceEndDate} onChange={setRecurrenceEndDate} />
                     </div>
                   )}
                 </div>

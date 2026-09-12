@@ -121,7 +121,14 @@ export const MobileSidebar = ({
         {...props}
       >
         <span className="font-bold text-white">💰 financas</span>
-        <Menu className="text-gray-300 cursor-pointer" onClick={() => setOpen(!open)} />
+        <button
+          type="button"
+          aria-label="Abrir menu"
+          className="bg-transparent border-0 p-0"
+          onClick={() => setOpen(!open)}
+        >
+          <Menu className="text-gray-300 cursor-pointer" />
+        </button>
         <AnimatePresence>
           {open && (
             <motion.div
@@ -134,12 +141,14 @@ export const MobileSidebar = ({
                 className
               )}
             >
-              <div
-                className="absolute right-6 top-6 z-50 text-gray-300 cursor-pointer"
+              <button
+                type="button"
+                aria-label="Fechar menu"
+                className="absolute right-6 top-6 z-50 text-gray-300 cursor-pointer bg-transparent border-0 p-0"
                 onClick={() => setOpen(!open)}
               >
                 <X />
-              </div>
+              </button>
               {children}
             </motion.div>
           )}
