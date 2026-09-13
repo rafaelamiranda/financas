@@ -207,3 +207,33 @@ export async function deleteTagRecord(id: string) {
     return false;
   }
 }
+
+export async function updateTagOrder(tags: Tag[]) {
+  if (!supabase) return false;
+
+  const userId = await getUserId();
+  if (!userId) {
+    console.error('Cannot sync tag order: user not authenticated');
+    return false;
+  }
+
+  try {
+    const updates = tags.map((tag) => ({
+      id: tag.id,
+      order: tag.order,
+    }));
+
+    const { error } = await supabase
+      .from('tags')
+      .upsert(
+        updates.map((u) => ({ ...u, user_id: userId })),
+        { onConflict: 'id,user_id' }
+      );
+
+    if (error) throw error;
+    return true;
+  } catch (error) {
+    console.error('Error updating tag order:', error);
+    return false;
+  }
+}

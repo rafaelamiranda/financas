@@ -285,3 +285,10 @@ export const validateRecurrenceCount = (count: string, recurrenceMode: 'infinite
   }
   return { valid: true, value: parsed };
 };
+
+export const validateRecurrenceEndDate = (startDate: Date, endDate: Date): { valid: boolean; error?: string } => {
+  if (endDate <= startDate) {
+    return { valid: false, error: 'Data de término deve ser após a data de início' };
+  }
+  return { valid: true };
+};

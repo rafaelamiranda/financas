@@ -4,7 +4,7 @@ import { ArrowDownLeft, ArrowUpRight, ShoppingBag, PiggyBank, CreditCard, X, Che
 import type { TransactionType, RecurrenceType } from '../types';
 import { CATEGORY_COLORS, CATEGORY_LABELS, TAG_COLOR_PRESETS } from '../types';
 import { useFinancasStore } from '../store';
-import { formatCurrency, parseLocalDate, validateTransactionAmount, validateTransactionDate, validateRecurrenceCount } from '../utils';
+import { formatCurrency, parseLocalDate, validateTransactionAmount, validateTransactionDate, validateRecurrenceCount, validateRecurrenceEndDate } from '../utils';
 import { useFocusTrap } from '../hooks/useFocusTrap';
 import DatePicker from './ui/DatePicker';
 
@@ -133,8 +133,17 @@ export default function AddModal({
     }
 
     // Validar recurrence_end_date se necessário
-    if (recurrence === 'fixed_until' && !recurrenceEndDate) {
-      errors.recurrenceEndDate = 'Data de término é obrigatória para recorrência "Até uma data"';
+    if (recurrence === 'fixed_until') {
+      if (!recurrenceEndDate) {
+        errors.recurrenceEndDate = 'Data de término é obrigatória para recorrência "Até uma data"';
+      } else {
+        const selectedDate = parseLocalDate(date);
+        const recurrenceEndDateParsed = parseLocalDate(recurrenceEndDate);
+        const endDateValidation = validateRecurrenceEndDate(selectedDate, recurrenceEndDateParsed);
+        if (!endDateValidation.valid) {
+          errors.recurrenceEndDate = endDateValidation.error || 'Data inválida';
+        }
+      }
     }
 
     // Validar recurrence_count se necessário

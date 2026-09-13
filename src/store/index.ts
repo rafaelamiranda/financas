@@ -9,6 +9,7 @@ import {
     insertTag as insertSupabaseTag,
     updateTagRecord,
     deleteTagRecord,
+    updateTagOrder,
 } from '../lib/supabase';
 import { useToastStore } from './toastStore';
 
@@ -212,7 +213,12 @@ export const useFinancasStore = create<FinancasStore>((set, get) => {
             set({ tags: nextTags });
             saveToStorage(get().transactions, nextTags);
 
-            // TODO(Fase D): sync tag order to Supabase once Auth/backend lands (needs `order` column + user_id scoping).
+            // Sync tag order to Supabase if available
+            if (isSupabaseEnabled) {
+                updateTagOrder(nextTags).catch((err) => {
+                    console.error('Failed to sync tag order to Supabase:', err);
+                });
+            }
         },
 
         getTransactionsByMonth: (date) => {
