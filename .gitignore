@@ -12,6 +12,15 @@ dist
 dist-ssr
 *.local
 
+# Test/debug scripts
+check-schema.js
+check-user.js
+test-auth-flow.js
+test-recurrence.js
+verify-supabase.js
+view-data.js
+dev.pid
+
 # Editor directories and files
 .vscode/*
 !.vscode/extensions.json
