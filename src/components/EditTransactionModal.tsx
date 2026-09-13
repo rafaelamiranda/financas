@@ -4,7 +4,7 @@ import { X, Plus, Check } from 'lucide-react';
 import type { Transaction, RecurrenceType } from '../types';
 import { CATEGORY_COLORS, CATEGORY_LABELS, TAG_COLOR_PRESETS } from '../types';
 import { useFinancasStore } from '../store';
-import { formatCurrency, parseLocalDate } from '../utils';
+import { formatCurrency, parseLocalDate, validateTransactionAmount, validateTransactionDate, validateRecurrenceCount } from '../utils';
 import { useFocusTrap } from '../hooks/useFocusTrap';
 import DatePicker from './ui/DatePicker';
 
@@ -92,26 +92,39 @@ export default function EditTransactionModal({
     if (!transaction) return;
 
     const numAmount = parseFloat(amount);
-    const now = new Date();
-    const oneYearAgo = new Date(now.getFullYear() - 1, now.getMonth(), now.getDate());
-    const oneYearFromNow = new Date(now.getFullYear() + 1, now.getMonth(), now.getDate());
-
     const errors: Record<string, string> = {};
 
+    // Validar data
     if (!date) {
       errors.date = 'Data é obrigatória';
-    }
-
-    if (!amount || Number.isNaN(numAmount) || numAmount <= 0) {
-      errors.amount = 'Valor deve ser maior que 0';
-    } else if (numAmount > 999999.99) {
-      errors.amount = 'Valor não pode ser maior que R$ 999.999,99';
-    }
-
-    if (date && !errors.date) {
+    } else {
       const selectedDate = parseLocalDate(date);
-      if (selectedDate < oneYearAgo || selectedDate > oneYearFromNow) {
-        errors.date = 'Data deve estar dentro de 1 ano no passado ou futuro';
+      const dateValidation = validateTransactionDate(selectedDate);
+      if (!dateValidation.valid) {
+        errors.date = dateValidation.error || 'Data inválida';
+      }
+    }
+
+    // Validar valor
+    if (!amount) {
+      errors.amount = 'Valor é obrigatório';
+    } else {
+      const amountValidation = validateTransactionAmount(numAmount);
+      if (!amountValidation.valid) {
+        errors.amount = amountValidation.error || 'Valor inválido';
+      }
+    }
+
+    // Validar recurrence_end_date se necessário
+    if (recurrence === 'fixed_until' && !recurrenceEndDate) {
+      errors.recurrenceEndDate = 'Data de término é obrigatória para recorrência "Até uma data"';
+    }
+
+    // Validar recurrence_count se necessário
+    if (recurrence !== 'none' && recurrenceMode === 'count') {
+      const countValidation = validateRecurrenceCount(recurrenceCount, recurrenceMode);
+      if (!countValidation.valid) {
+        errors.recurrenceCount = countValidation.error || 'Número inválido';
       }
     }
 
@@ -122,6 +135,7 @@ export default function EditTransactionModal({
 
     setFieldErrors({});
     const selectedDate = parseLocalDate(date);
+    const recurrenceCountValue = recurrence !== 'none' && recurrenceMode === 'count' ? parseInt(recurrenceCount, 10) : undefined;
 
     const changes = {
       amount: numAmount,
@@ -129,7 +143,7 @@ export default function EditTransactionModal({
       date: selectedDate,
       recurrence,
       recurrence_end_date: recurrence === 'fixed_until' && recurrenceEndDate ? parseLocalDate(recurrenceEndDate) : undefined,
-      recurrence_count: recurrence !== 'none' && recurrenceMode === 'count' ? parseInt(recurrenceCount) : undefined,
+      recurrence_count: recurrenceCountValue,
       tag_ids: selectedTagIds,
     };
 

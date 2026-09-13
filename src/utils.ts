@@ -246,3 +246,42 @@ export const getHeatmapColor = (balance: number): { className: string; style?: R
     return { className: '', style: { backgroundColor: '#991b1b' } };
   }
 };
+
+export const validateTransactionAmount = (amount: number): { valid: boolean; error?: string } => {
+  if (isNaN(amount) || amount <= 0) {
+    return { valid: false, error: 'Valor deve ser maior que 0' };
+  }
+  if (amount > 999999.99) {
+    return { valid: false, error: 'Valor não pode ser maior que R$ 999.999,99' };
+  }
+  return { valid: true };
+};
+
+export const validateTransactionDate = (date: Date): { valid: boolean; error?: string } => {
+  if (!(date instanceof Date) || isNaN(date.getTime())) {
+    return { valid: false, error: 'Data inválida' };
+  }
+  const now = new Date();
+  const oneYearAgo = new Date(now.getFullYear() - 1, now.getMonth(), now.getDate());
+  const oneYearFromNow = new Date(now.getFullYear() + 1, now.getMonth(), now.getDate());
+
+  if (date < oneYearAgo || date > oneYearFromNow) {
+    return { valid: false, error: 'Data deve estar dentro de 1 ano no passado ou futuro' };
+  }
+  return { valid: true };
+};
+
+export const validateRecurrenceCount = (count: string, recurrenceMode: 'infinite' | 'count'): { valid: boolean; error?: string; value?: number } => {
+  if (recurrenceMode === 'infinite') {
+    return { valid: true };
+  }
+
+  const parsed = parseInt(count, 10);
+  if (isNaN(parsed) || parsed < 1) {
+    return { valid: false, error: 'Número de ocorrências deve ser pelo menos 1' };
+  }
+  if (parsed > 999) {
+    return { valid: false, error: 'Número de ocorrências não pode ser maior que 999' };
+  }
+  return { valid: true, value: parsed };
+};

@@ -119,23 +119,23 @@ Ver detalhes de segurança em `SECURITY.md` e `SUPABASE_SETUP.md`.
 
 ## Pendências de desenvolvimento
 
-### Funcionalidades do escopo original ainda não implementadas
-- [ ] **Edição/exclusão de lançamentos** — células da tabela de saldos ainda não são clicáveis para abrir o lançamento
-- [x] **Recorrência de lançamentos** — UI select dropdown com tipos: Nenhuma, Diário, Semanal, Mensal, Até uma data; projeção automática para "horizonte"
-- [ ] **Seleção de tags no lançamento** — modal de adicionar não tem campo de tags ainda
-- [x] **Tela "horizonte"** — projeção de saldo futuro para os próximos 6 meses baseada em recorrências; mostra performance e categoria breakdown
-- [x] **Tela "menu"** — configurações com tema (claro/escuro/sistema), export de dados, delete com confirmação, info do app
-- [ ] **Múltiplos meses lado a lado** na tela de saldos (desktop) — hoje mostra só um mês por vez
-- [x] **Edição/exclusão de tags** — modal de edição para nome e cor (com color picker), dropdown menu em cada tag
-- [ ] **Reordenar tags** (botão shuffle mencionado no escopo) — não implementado
-- [ ] **Date picker customizado** (dd/mm/aa) — hoje usa `<input type="date">` nativo do navegador
+### Funcionalidades do escopo original
+- [x] **Edição/exclusão de lançamentos** — ✅ `EditTransactionModal.tsx` permite editar e deletar
+- [x] **Recorrência de lançamentos** — ✅ UI select dropdown; recurrence_count para limitar ocorrências
+- [x] **Seleção de tags no lançamento** — ✅ `AddModal` e `EditTransactionModal` com seleção de tags
+- [x] **Tela "horizonte"** — ✅ Projeção de 6 meses com performance e breakdown por categoria
+- [x] **Tela "menu"** — ✅ Configurações com tema, export JSON, delete com confirmação
+- [x] **Edição/exclusão de tags** — ✅ Modal de edição com color picker e dropdown menu
+- [ ] **Múltiplos meses lado a lado** (desktop) — Mostrar 2-3 meses simultaneamente
+- [ ] **Reordenar tags** — Drag-and-drop ou botão shuffle
+- [ ] **Date picker customizado** (dd/mm/aa) — Substituir `<input type="date">` nativo
 
 ### Infraestrutura / técnico
-- [x] **Autenticação e Backend** (Supabase Auth + Postgres + RLS) — ✅ Implementado em Fase D
-- [ ] **Testes automatizados** — infraestrutura Vitest em lugar, mas testes ainda não implementados
-- [ ] **Validação de inputs** — formulário de lançamento não valida valor máximo, datas inválidas, etc.
-- [ ] **Acessibilidade** — falta auditoria de contraste, `aria-label`s em botões só-ícone, navegação por teclado no modal
-- [x] **PWA / instalável** — ✅ Manifest + service worker implementados em Fase C
-- [ ] **Tratamento de erros de storage** — `localStorage` cheio ou bloqueado (modo privado) falha silenciosamente (só `console.error`)
+- [x] **Autenticação e Backend** — ✅ Supabase Auth + RLS (Fase D)
+- [x] **Testes automatizados** — ✅ 21 unit tests para utils.ts (Vitest)
+- [ ] **Validação de inputs** — Range de valores, datas inválidas (schema validation com Zod)
+- [ ] **Acessibilidade** — Auditoria de contraste, `aria-label`s, navegação por teclado
+- [x] **PWA / instalável** — ✅ Manifest + service worker (Fase C)
+- [x] **Tratamento de erros de storage** — ✅ Toast notifica quando localStorage falha
 
 Ver `SECURITY.md` para o levantamento de gargalos de performance e riscos de segurança.
