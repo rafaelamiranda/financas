@@ -117,26 +117,27 @@ Ver detalhes de segurança em `SECURITY.md` e `SUPABASE_SETUP.md`.
 
 ---
 
-## Pendências de desenvolvimento
+## Status de Desenvolvimento
 
-### Funcionalidades do escopo original
-- [x] **Edição/exclusão de lançamentos** — ✅ `EditTransactionModal.tsx` permite editar e deletar
-- [x] **Recorrência de lançamentos** — ✅ UI select dropdown; recurrence_count para limitar ocorrências
-- [x] **Seleção de tags no lançamento** — ✅ `AddModal` e `EditTransactionModal` com seleção de tags
-- [x] **Tela "horizonte"** — ✅ Projeção de 6 meses com performance e breakdown por categoria
-- [x] **Tela "menu"** — ✅ Configurações com tema, export JSON, delete com confirmação
-- [x] **Edição/exclusão de tags** — ✅ Modal de edição com color picker e dropdown menu
-- [ ] **Múltiplos meses lado a lado** (desktop) — Mostrar 2-3 meses simultaneamente
-- [ ] **Reordenar tags** — Drag-and-drop ou botão shuffle
-- [ ] **Date picker customizado** (dd/mm/aa) — Substituir `<input type="date">` nativo
+### ✅ Funcionalidades Implementadas
+**Escopo original (100% completo):**
+- ✅ Edição/exclusão de lançamentos
+- ✅ Recorrência de lançamentos (com contagem limite)
+- ✅ Seleção de tags no lançamento
+- ✅ Tela "horizonte" (projeção 6 meses)
+- ✅ Tela "menu" (configurações)
+- ✅ Edição/exclusão de tags (com color picker)
+- ✅ Múltiplos meses lado a lado (desktop: 1/2/3 conforme viewport)
+- ✅ Reordenar tags (drag-and-drop + shuffle button)
+- ✅ Date picker customizado (dd/mm/aa + calendário)
 
-### Infraestrutura / técnico
-- [x] **Autenticação e Backend** — ✅ Supabase Auth + RLS (Fase D)
-- [x] **Testes automatizados** — ✅ 21 unit tests para utils.ts (Vitest)
-- [x] **Validação de inputs** — ✅ Range de valores, datas inválidas, recurrence_count
-- [x] **Acessibilidade** — ✅ aria-labels, focus rings (WCAG), navegação por teclado
-- [x] **PWA / instalável** — ✅ Manifest + service worker (Fase C)
-- [x] **Tratamento de erros de storage** — ✅ Toast notifica quando localStorage falha
-- [x] **Análise de segurança** — ✅ SECURITY_ANALYSIS.md com recomendações
+**Infraestrutura (100% completo):**
+- ✅ Autenticação obrigatória (Supabase Auth + RLS)
+- ✅ Testes automatizados (21 unit tests, Vitest)
+- ✅ Validação de inputs (range, dates, recurrence_count)
+- ✅ Acessibilidade (aria-labels, focus rings, WCAG)
+- ✅ PWA / instalável (Manifest + service worker)
+- ✅ Tratamento de erros de storage (Toast notifications)
+- ✅ Análise de segurança (SECURITY_ANALYSIS.md)
 
 Ver `SECURITY.md` para o levantamento de gargalos de performance e riscos de segurança.
