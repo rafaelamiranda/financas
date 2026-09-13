@@ -133,9 +133,10 @@ Ver detalhes de segurança em `SECURITY.md` e `SUPABASE_SETUP.md`.
 ### Infraestrutura / técnico
 - [x] **Autenticação e Backend** — ✅ Supabase Auth + RLS (Fase D)
 - [x] **Testes automatizados** — ✅ 21 unit tests para utils.ts (Vitest)
-- [ ] **Validação de inputs** — Range de valores, datas inválidas (schema validation com Zod)
-- [ ] **Acessibilidade** — Auditoria de contraste, `aria-label`s, navegação por teclado
+- [x] **Validação de inputs** — ✅ Range de valores, datas inválidas, recurrence_count
+- [x] **Acessibilidade** — ✅ aria-labels, focus rings (WCAG), navegação por teclado
 - [x] **PWA / instalável** — ✅ Manifest + service worker (Fase C)
 - [x] **Tratamento de erros de storage** — ✅ Toast notifica quando localStorage falha
+- [x] **Análise de segurança** — ✅ SECURITY_ANALYSIS.md com recomendações
 
 Ver `SECURITY.md` para o levantamento de gargalos de performance e riscos de segurança.
