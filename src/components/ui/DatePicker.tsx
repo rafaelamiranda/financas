@@ -2,7 +2,6 @@ import { useEffect, useRef, useState } from 'react';
 import { AnimatePresence, motion } from 'framer-motion';
 import { ChevronLeft, ChevronRight, Calendar } from 'lucide-react';
 import { parseLocalDate } from '../../utils';
-import { useFocusTrap } from '../../hooks/useFocusTrap';
 
 interface DatePickerProps {
   /** ISO yyyy-mm-dd string, or '' when empty */
@@ -59,7 +58,6 @@ export default function DatePicker({ value, onChange, placeholder = 'dd/mm/aa', 
   const [isOpen, setIsOpen] = useState(false);
   const [viewDate, setViewDate] = useState(() => (value ? parseLocalDate(value) : new Date()));
   const containerRef = useRef<HTMLDivElement>(null);
-  const dropdownRef = useRef<HTMLDivElement>(null);
 
   // Re-sync display state when the `value` prop changes from outside (e.g. parent resets the form).
   // Derived during render (React's recommended pattern) instead of in an effect, to avoid an extra render pass.
@@ -82,8 +80,6 @@ export default function DatePicker({ value, onChange, placeholder = 'dd/mm/aa', 
     document.addEventListener('mousedown', handleClickOutside);
     return () => document.removeEventListener('mousedown', handleClickOutside);
   }, [isOpen]);
-
-  useFocusTrap(dropdownRef, isOpen, () => setIsOpen(false));
 
   const handleInputChange = (raw: string) => {
     const masked = maskInput(raw);
@@ -161,7 +157,6 @@ export default function DatePicker({ value, onChange, placeholder = 'dd/mm/aa', 
       <AnimatePresence>
         {isOpen && (
           <motion.div
-            ref={dropdownRef}
             role="dialog"
             aria-modal="true"
             initial={{ opacity: 0, y: -8, scale: 0.97 }}

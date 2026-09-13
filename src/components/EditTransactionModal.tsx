@@ -14,9 +14,15 @@ interface EditTransactionModalProps {
   isOpen: boolean;
   transaction: Transaction | null;
   onClose: () => void;
+  isRecurringInstance?: boolean;
 }
 
-export default function EditTransactionModal({ isOpen, transaction, onClose }: EditTransactionModalProps) {
+export default function EditTransactionModal({
+  isOpen,
+  transaction,
+  onClose,
+  isRecurringInstance = false,
+}: EditTransactionModalProps) {
   const [amount, setAmount] = useState('0');
   const [description, setDescription] = useState('');
   const [date, setDate] = useState('');
@@ -27,7 +33,11 @@ export default function EditTransactionModal({ isOpen, transaction, onClose }: E
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
   const [recurrence, setRecurrence] = useState<RecurrenceType>('none');
   const [recurrenceEndDate, setRecurrenceEndDate] = useState('');
+  const [recurrenceMode, setRecurrenceMode] = useState<'infinite' | 'count'>('infinite');
+  const [recurrenceCount, setRecurrenceCount] = useState('');
   const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({});
+  const [showRecurrenceChoice, setShowRecurrenceChoice] = useState(false);
+  const [pendingChanges, setPendingChanges] = useState<any>(null);
 
   const { updateTransaction, deleteTransaction, tags, addTag } = useFinancasStore();
   const sortedTags = [...tags].sort((a, b) => (a.order ?? 0) - (b.order ?? 0));
@@ -43,6 +53,8 @@ export default function EditTransactionModal({ isOpen, transaction, onClose }: E
     setSelectedTagIds(transaction.tag_ids);
     setRecurrence(transaction.recurrence);
     setRecurrenceEndDate(transaction.recurrence_end_date ? transaction.recurrence_end_date.toISOString().split('T')[0] : '');
+    setRecurrenceMode(transaction.recurrence_count ? 'count' : 'infinite');
+    setRecurrenceCount(transaction.recurrence_count ? transaction.recurrence_count.toString() : '');
   }
 
   const toggleTag = (tagId: string) => {
@@ -111,14 +123,39 @@ export default function EditTransactionModal({ isOpen, transaction, onClose }: E
     setFieldErrors({});
     const selectedDate = parseLocalDate(date);
 
-    updateTransaction(transaction.id, {
+    const changes = {
       amount: numAmount,
       description: description || CATEGORY_LABELS[transaction.type],
       date: selectedDate,
       recurrence,
       recurrence_end_date: recurrence === 'fixed_until' && recurrenceEndDate ? parseLocalDate(recurrenceEndDate) : undefined,
+      recurrence_count: recurrence !== 'none' && recurrenceMode === 'count' ? parseInt(recurrenceCount) : undefined,
       tag_ids: selectedTagIds,
-    });
+    };
+
+    // Se é uma instância recorrente, perguntar se edita apenas essa ou todas a partir dela
+    if (isRecurringInstance && (transaction.recurrence !== 'none' || transaction.recurrence)) {
+      setPendingChanges(changes);
+      setShowRecurrenceChoice(true);
+    } else {
+      applyChanges(changes, 'all');
+    }
+  };
+
+  const applyChanges = (changes: any, scope: 'this' | 'all') => {
+    if (!transaction) return;
+
+    if (scope === 'this') {
+      // Criar um novo registro sem recorrência com as mudanças
+      updateTransaction(transaction.id, {
+        ...changes,
+        recurrence: 'none',
+        recurrence_end_date: undefined,
+      });
+    } else {
+      // Atualizar o registro original com recorrência
+      updateTransaction(transaction.id, changes);
+    }
 
     onClose();
     setAmount('0');
@@ -128,6 +165,10 @@ export default function EditTransactionModal({ isOpen, transaction, onClose }: E
     setShowNewTagForm(false);
     setRecurrence('none');
     setRecurrenceEndDate('');
+    setRecurrenceMode('infinite');
+    setRecurrenceCount('');
+    setShowRecurrenceChoice(false);
+    setPendingChanges(null);
   };
 
   const handleDelete = () => {
@@ -311,10 +352,53 @@ export default function EditTransactionModal({ isOpen, transaction, onClose }: E
                 <option value="fixed_until">Até uma data</option>
               </select>
 
-              {recurrence === 'fixed_until' && (
-                <div className="mt-3">
-                  <label className="text-sm text-gray-400 block mb-2">Até quando?</label>
-                  <DatePicker value={recurrenceEndDate} onChange={setRecurrenceEndDate} />
+              {recurrence !== 'none' && (
+                <div className="mt-3 space-y-3">
+                  <div className="space-y-2">
+                    <label className="text-sm text-gray-400 block">Quantas transações?</label>
+                    <div className="flex gap-2">
+                      <button
+                        type="button"
+                        onClick={() => setRecurrenceMode('infinite')}
+                        className={`flex-1 py-2 rounded-lg transition font-medium ${
+                          recurrenceMode === 'infinite'
+                            ? 'bg-entrada text-bg-primary'
+                            : 'bg-card-hover text-gray-400 hover:text-white'
+                        }`}
+                      >
+                        Infinito
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => setRecurrenceMode('count')}
+                        className={`flex-1 py-2 rounded-lg transition font-medium ${
+                          recurrenceMode === 'count'
+                            ? 'bg-entrada text-bg-primary'
+                            : 'bg-card-hover text-gray-400 hover:text-white'
+                        }`}
+                      >
+                        Número
+                      </button>
+                    </div>
+                  </div>
+
+                  {recurrenceMode === 'count' && (
+                    <input
+                      type="number"
+                      value={recurrenceCount}
+                      onChange={(e) => setRecurrenceCount(e.target.value)}
+                      placeholder="Ex: 10"
+                      min="2"
+                      className="w-full bg-card-hover border border-card-hover/50 rounded-lg px-4 py-2 text-white placeholder-gray-500 focus:outline-none focus:border-entrada"
+                    />
+                  )}
+
+                  {recurrence === 'fixed_until' && (
+                    <div>
+                      <label className="text-sm text-gray-400 block mb-2">Até quando?</label>
+                      <DatePicker value={recurrenceEndDate} onChange={setRecurrenceEndDate} />
+                    </div>
+                  )}
                 </div>
               )}
             </div>
@@ -347,6 +431,40 @@ export default function EditTransactionModal({ isOpen, transaction, onClose }: E
                 Salvar
               </button>
             </div>
+
+            {showRecurrenceChoice && (
+              <div className="fixed inset-0 bg-black/70 z-50 flex items-center justify-center">
+                <motion.div
+                  initial={{ scale: 0.9, opacity: 0 }}
+                  animate={{ scale: 1, opacity: 1 }}
+                  exit={{ scale: 0.9, opacity: 0 }}
+                  className="bg-card-dark rounded-lg p-6 max-w-sm mx-4 space-y-4"
+                  onClick={(e) => e.stopPropagation()}
+                >
+                  <h3 className="text-lg font-bold text-white">Editar recorrência</h3>
+                  <p className="text-gray-400">Como deseja editar esta transação?</p>
+                  <div className="space-y-2">
+                    <button
+                      onClick={() =>
+                        pendingChanges && applyChanges(pendingChanges, 'this')
+                      }
+                      className="w-full py-3 rounded-lg bg-card-hover hover:bg-card-hover/80 text-white transition text-sm font-medium text-left"
+                    >
+                      Apenas esta ocorrência
+                    </button>
+                    <button
+                      onClick={() =>
+                        pendingChanges && applyChanges(pendingChanges, 'all')
+                      }
+                      style={{ backgroundColor: CATEGORY_COLORS[transaction.type] }}
+                      className="w-full py-3 rounded-lg text-bg-primary hover:opacity-90 transition text-sm font-medium"
+                    >
+                      Esta e todas as futuras
+                    </button>
+                  </div>
+                </motion.div>
+              </div>
+            )}
           </motion.div>
         </motion.div>
       )}

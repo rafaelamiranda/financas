@@ -30,6 +30,7 @@ export const generateRecurringTransactions = (
     : endDate;
 
   const queryEndDate = endDate > maxEndDate ? maxEndDate : endDate;
+  let occurrenceCount = 0;
 
   while (currentDate <= queryEndDate) {
     if (
@@ -39,11 +40,17 @@ export const generateRecurringTransactions = (
         transaction.date.getDate()
       )
     ) {
+      // Check if we've reached the max count
+      if (transaction.recurrence_count && occurrenceCount >= transaction.recurrence_count - 1) {
+        break;
+      }
+
       recurring.push({
         ...transaction,
         id: `${transaction.id}-recurring-${currentDate.getTime()}`,
         date: new Date(currentDate),
       });
+      occurrenceCount++;
     }
 
     switch (transaction.recurrence) {
@@ -156,7 +163,7 @@ export const calculateDailyBalances = (transactions: Transaction[], date: Date):
       .filter((t) => t.type === 'cartao')
       .reduce((sum, t) => sum + t.amount, 0);
 
-    accumulatedBalance = accumulatedBalance + entrada - saida - diario - economia;
+    accumulatedBalance = accumulatedBalance + entrada - saida - diario - economia - cartao;
 
     balances.push({
       date: dayDate,
@@ -226,24 +233,16 @@ export const calculateMonthlyTotals = (transactions: Transaction[], date: Date) 
   };
 };
 
-export const getHeatmapColor = (balance: number, today: Date, dayDate: Date): string => {
-  const isToday = (
-    today.getFullYear() === dayDate.getFullYear() &&
-    today.getMonth() === dayDate.getMonth() &&
-    today.getDate() === dayDate.getDate()
-  );
-
-  if (isToday) {
-    return 'bg-card-hover';
-  }
-
-  if (balance < 0) {
-    return 'bg-red-900/40';
-  } else if (balance < 500) {
-    return 'bg-yellow-900/30';
-  } else if (balance < 2000) {
-    return 'bg-green-900/20';
+export const getHeatmapColor = (balance: number): { className: string; style?: Record<string, string> } => {
+  if (balance > 2000) {
+    return { className: '', style: { backgroundColor: '#1a5d1a' } };
+  } else if (balance >= 1000) {
+    return { className: '', style: { backgroundColor: '#4ade80' } };
+  } else if (balance >= 0) {
+    return { className: '', style: { backgroundColor: '#A07A00' } };
+  } else if (balance >= -500) {
+    return { className: '', style: { backgroundColor: '#fca5a5' } };
   } else {
-    return 'bg-green-900/40';
+    return { className: '', style: { backgroundColor: '#991b1b' } };
   }
 };

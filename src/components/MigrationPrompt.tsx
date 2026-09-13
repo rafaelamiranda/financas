@@ -29,6 +29,8 @@ export default function MigrationPrompt() {
     };
 
     checkMigrationNeeded();
+    // Only check when user changes; transactions/tags length is checked within the effect
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [user]);
 
   const handleMigrate = async () => {
@@ -38,13 +40,13 @@ export default function MigrationPrompt() {
     try {
       // Migrate transactions
       for (const transaction of transactions) {
-        const { id, created_at, ...rest } = transaction;
+        const { id: _id, created_at: _created_at, ...rest } = transaction;
         await insertTransaction(rest);
       }
 
       // Migrate tags
       for (const tag of tags) {
-        const { id, ...rest } = tag;
+        const { id: _id, ...rest } = tag;
         await insertTag(rest);
       }
 

@@ -1,10 +1,10 @@
 @import "tailwindcss";
 
 @theme {
-  --color-bg-primary: #0a0a0a;
-  --color-bg-secondary: #0d0d0f;
-  --color-card-dark: #161618;
-  --color-card-hover: #1a1a1c;
+  --color-bg-primary: #1a1a1a;
+  --color-bg-secondary: #242424;
+  --color-card-dark: #2d2d2d;
+  --color-card-hover: #373737;
   --color-entrada: #7ED957;
   --color-saida: #FF6B6B;
   --color-diario: #FF69B4;
@@ -44,10 +44,10 @@
 
 /* Explicit dark theme */
 [data-theme="dark"] {
-  --color-bg-primary: #0a0a0a;
-  --color-bg-secondary: #0d0d0f;
-  --color-card-dark: #161618;
-  --color-card-hover: #1a1a1c;
+  --color-bg-primary: #1a1a1a;
+  --color-bg-secondary: #242424;
+  --color-card-dark: #2d2d2d;
+  --color-card-hover: #373737;
   color-scheme: dark;
 }
 

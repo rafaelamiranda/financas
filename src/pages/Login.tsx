@@ -2,9 +2,11 @@ import { useState } from 'react';
 import { Wallet } from 'lucide-react';
 import { signUp, signIn } from '../lib/auth';
 import { useAuthStore } from '../store/authStore';
+import ForgotPassword from './ForgotPassword';
 
 export default function Login() {
   const [isSignUp, setIsSignUp] = useState(false);
+  const [showForgotPassword, setShowForgotPassword] = useState(false);
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
@@ -49,6 +51,10 @@ export default function Login() {
     }
   };
 
+  if (showForgotPassword) {
+    return <ForgotPassword onBack={() => setShowForgotPassword(false)} />;
+  }
+
   return (
     <div className="w-full h-screen flex items-center justify-center bg-bg-primary overflow-hidden">
       <div className="w-full max-w-sm px-4">
@@ -79,7 +85,19 @@ export default function Login() {
 
           {/* Password */}
           <div>
-            <label className="text-sm text-gray-400 block mb-2">Senha</label>
+            <div className="flex items-center justify-between mb-2">
+              <label className="text-sm text-gray-400">Senha</label>
+              {!isSignUp && (
+                <button
+                  type="button"
+                  onClick={() => setShowForgotPassword(true)}
+                  disabled={loading}
+                  className="text-xs text-entrada hover:text-entrada/90 disabled:opacity-50"
+                >
+                  Esqueceu?
+                </button>
+              )}
+            </div>
             <input
               type="password"
               value={password}

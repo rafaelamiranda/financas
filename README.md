@@ -70,12 +70,17 @@ Tag { id, name, color }
 
 ---
 
-## Implementações recentes (v1.0)
+## Implementações recentes (v1.1)
 
 ### UI/UX
+- [x] **Recorrência com contagem limite** — Escolha entre infinito ou número específico de ocorrências (select + input numérico condicionado)
+- [x] **Sidebar comportamento corrigido** — Removeu abertura automática no hover; adicionou botão explícito (chevron) para abrir; botão X para fechar
+- [x] **Tabela de saldos padronizada** — Meses com 30 e 31 dias agora têm altura visual consistente (padding rows + fixed height `h-12`)
+- [x] **Ícone de menu alterado** — Substituição de hamburger por engrenagem (Settings icon) na rota `/settings`
+- [x] **Nome do projeto** — Alterado de "financas" para "Finanças" (com acento) na sidebar
+- [x] **Botão adicionar circular** — Perfeito círculo (`w-10 h-10 rounded-full`) quando sidebar está recolhida
 - [x] **Recorrência como select dropdown** — Substituição dos botões por select nativo (mais compacto; opções: Nenhuma, Diário, Semanal, Mensal, Até uma data)
 - [x] **Tag editing** — Modal para editar nome e cor das tags com color picker (preset + custom color)
-- [x] **Fixed sidebar toggle** — Botão pin/unpin para fixar a sidebar (persistido em localStorage)
 - [x] **Tema claro/escuro** — Radio buttons no Menu para selecionar Light/Dark/System; aplicado antes do render (sem flash)
 
 ### Páginas

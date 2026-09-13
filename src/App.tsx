@@ -11,6 +11,7 @@ import Totais from './pages/Totais';
 import Tags from './pages/Tags';
 import Horizonte from './pages/Horizonte';
 import Menu from './pages/Menu';
+import ResetPassword from './pages/ResetPassword';
 
 function AppContent() {
   const { setSession, setAuthLoading } = useAuthStore();
@@ -57,6 +58,10 @@ function AppContent() {
   return (
     <BrowserRouter>
       <Routes>
+        {/* Reset password route - no auth required */}
+        <Route path="/reset-password" element={<ResetPassword />} />
+
+        {/* All other routes require auth */}
         <Route element={<AuthGate />}>
           <Route element={<Layout />}>
             <Route path="/" element={<Saldos />} />

@@ -9,6 +9,7 @@ export interface Transaction {
   date: Date;
   recurrence: RecurrenceType;
   recurrence_end_date?: Date;
+  recurrence_count?: number;
   tag_ids: string[];
   created_at: Date;
 }

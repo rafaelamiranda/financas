@@ -1,18 +1,34 @@
 import { useState } from 'react';
-import type { Transaction } from '../types';
+import type { Transaction, TransactionType } from '../types';
 import { useFinancasStore } from '../store';
 import { formatCurrency } from '../utils';
 import { CATEGORY_COLORS } from '../types';
 import MonthTable from '../components/MonthTable';
 import EditTransactionModal from '../components/EditTransactionModal';
+import AddModal from '../components/AddModal';
 import { useMonthsToShow } from '../hooks/useMediaQuery';
 
 export default function Saldos() {
   const [anchorDate, setAnchorDate] = useState(new Date());
   const [editingTransaction, setEditingTransaction] = useState<Transaction | null>(null);
   const [selectedDayTransactions, setSelectedDayTransactions] = useState<Transaction[]>([]);
+  const [showAddModal, setShowAddModal] = useState(false);
+  const [addModalType, setAddModalType] = useState<TransactionType | undefined>();
+  const [addModalDate, setAddModalDate] = useState<Date | undefined>();
   const transactions = useFinancasStore((state) => state.transactions);
   const monthsToShow = useMonthsToShow();
+
+  const handleAddQuickTransaction = (type: TransactionType, date: Date) => {
+    setAddModalType(type);
+    setAddModalDate(date);
+    setShowAddModal(true);
+  };
+
+  const handleCloseAddModal = () => {
+    setShowAddModal(false);
+    setAddModalType(undefined);
+    setAddModalDate(undefined);
+  };
 
   const handlePrevMonth = () => {
     setAnchorDate((d) => new Date(d.getFullYear(), d.getMonth() - 1, 1));
@@ -29,7 +45,7 @@ export default function Saldos() {
   return (
     <div className="w-full h-full flex flex-col">
       {/* Header */}
-      <div className="sticky top-0 md:top-0 bg-card-dark border-b border-card-hover/20 p-4 md:p-6 space-y-4">
+      <div className="sticky top-0 md:top-0 bg-transparent border-b border-card-hover/10 p-4 md:p-6 space-y-4">
         <div className="flex items-center justify-between">
           <h1 className="text-2xl font-bold text-white">saldos</h1>
           <div className="flex items-center gap-2">
@@ -61,6 +77,7 @@ export default function Saldos() {
               transactions={transactions}
               onSelectDay={setSelectedDayTransactions}
               onEditTransaction={setEditingTransaction}
+              onAddQuickTransaction={handleAddQuickTransaction}
             />
           ))}
         </div>
@@ -103,6 +120,13 @@ export default function Saldos() {
         isOpen={editingTransaction !== null}
         transaction={editingTransaction}
         onClose={() => setEditingTransaction(null)}
+      />
+
+      <AddModal
+        isOpen={showAddModal}
+        onClose={handleCloseAddModal}
+        defaultType={addModalType}
+        defaultDate={addModalDate}
       />
     </div>
   );

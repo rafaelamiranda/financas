@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { Outlet, useLocation, useNavigate } from 'react-router-dom';
-import { LayoutGrid, Sigma, Tag, Menu as MenuIcon, Plus, CalendarDays, TrendingUp, Wallet, PinOff, Pin } from 'lucide-react';
+import { LayoutGrid, Sigma, Tag, Settings, Plus, CalendarDays, TrendingUp, Wallet, X, ChevronLeft } from 'lucide-react';
 import { Sidebar, SidebarBody, SidebarLink } from './ui/sidebar';
 import AddModal from './AddModal';
 import Toast from './ui/Toast';
@@ -8,13 +8,6 @@ import MigrationPrompt from './MigrationPrompt';
 
 export default function Layout() {
   const [showAddModal, setShowAddModal] = useState(false);
-  const [sidebarFixed, setSidebarFixed] = useState(() => {
-    try {
-      return localStorage.getItem('sidebarFixed') === 'true';
-    } catch {
-      return false;
-    }
-  });
   const [open, setOpen] = useState(false);
   const location = useLocation();
   const navigate = useNavigate();
@@ -24,7 +17,7 @@ export default function Layout() {
     { href: '/totais', icon: <Sigma className="h-5 w-5 shrink-0" />, label: 'totais' },
     { href: '/tags', icon: <Tag className="h-5 w-5 shrink-0" />, label: 'tags' },
     { href: '/horizonte', icon: <TrendingUp className="h-5 w-5 shrink-0" />, label: 'horizonte' },
-    { href: '/settings', icon: <MenuIcon className="h-5 w-5 shrink-0" />, label: 'menu' },
+    { href: '/settings', icon: <Settings className="h-5 w-5 shrink-0" />, label: 'menu' },
   ];
 
   const isActive = (path: string) => location.pathname === path;
@@ -33,28 +26,25 @@ export default function Layout() {
     navigate('/');
   };
 
-  const toggleSidebarFixed = () => {
-    const newFixed = !sidebarFixed;
-    setSidebarFixed(newFixed);
-    if (newFixed) {
-      setOpen(true);
-    }
-    try {
-      localStorage.setItem('sidebarFixed', String(newFixed));
-    } catch {
-      // ignore
-    }
-  };
 
   return (
     <div className="flex h-screen w-full bg-bg-primary overflow-hidden">
-      <Sidebar open={open || sidebarFixed} setOpen={setOpen} fixed={sidebarFixed}>
+      <Sidebar open={open} setOpen={setOpen}>
         <SidebarBody className="justify-between gap-6">
           <div className="flex flex-col flex-1 overflow-y-auto overflow-x-hidden">
-            {/* Logo */}
+            {/* Logo / Menu Icon */}
             <div className="flex items-center gap-2 px-2 mb-6">
+              {!open && (
+                <button
+                  onClick={() => setOpen(true)}
+                  className="p-1 hover:bg-card-hover/50 rounded-lg transition"
+                  aria-label="Abrir menu"
+                >
+                  <ChevronLeft className="h-5 w-5 text-gray-400" />
+                </button>
+              )}
               <Wallet className="h-6 w-6 text-entrada flex-shrink-0" />
-              {open && <span className="font-bold text-white whitespace-pre">financas</span>}
+              {open && <span className="font-bold text-white whitespace-pre">Finanças</span>}
             </div>
 
             {/* Menu */}
@@ -69,7 +59,11 @@ export default function Layout() {
           <div className="flex flex-col gap-2">
             <button
               onClick={() => setShowAddModal(true)}
-              className="w-full py-3 px-2 rounded-full font-bold text-bg-primary bg-entrada hover:bg-entrada/90 transition flex items-center justify-center gap-2 overflow-hidden"
+              className={`font-bold text-bg-primary bg-entrada hover:bg-entrada/90 transition flex items-center justify-center gap-2 overflow-hidden ${
+                open
+                  ? 'w-full py-3 px-2 rounded-full'
+                  : 'w-10 h-10 rounded-full flex-shrink-0'
+              }`}
             >
               <Plus className="h-5 w-5 flex-shrink-0" />
               {open && <span className="whitespace-pre">adicionar</span>}
@@ -81,15 +75,16 @@ export default function Layout() {
               <CalendarDays className="h-5 w-5 flex-shrink-0" />
               {open && <span className="whitespace-pre">ir pra hoje</span>}
             </button>
-            <button
-              onClick={toggleSidebarFixed}
-              className="w-full py-2 px-2 rounded-lg text-sm text-gray-400 hover:text-white hover:bg-card-hover/50 transition flex items-center justify-center gap-2 overflow-hidden"
-              title={sidebarFixed ? 'Desafixar sidebar' : 'Fixar sidebar'}
-              aria-label={sidebarFixed ? 'Desafixar sidebar' : 'Fixar sidebar'}
-            >
-              {sidebarFixed ? <Pin className="h-5 w-5 shrink-0" /> : <PinOff className="h-5 w-5 shrink-0" />}
-              {open && <span className="whitespace-pre text-xs">{sidebarFixed ? 'fixado' : 'desafixar'}</span>}
-            </button>
+            {open && (
+              <button
+                onClick={() => setOpen(false)}
+                className="w-full py-2 px-2 rounded-lg text-sm text-gray-500 hover:text-gray-400 hover:bg-card-hover/20 transition flex items-center justify-center gap-2 overflow-hidden"
+                title="Fechar sidebar"
+                aria-label="Fechar sidebar"
+              >
+                <X className="h-4 w-4 shrink-0" />
+              </button>
+            )}
           </div>
         </SidebarBody>
       </Sidebar>

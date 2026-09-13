@@ -1,4 +1,4 @@
-import { useRef, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { AnimatePresence, motion } from 'framer-motion';
 import { ArrowDownLeft, ArrowUpRight, ShoppingBag, PiggyBank, CreditCard, X, ChevronLeft, Plus, Check } from 'lucide-react';
 import type { TransactionType, RecurrenceType } from '../types';
@@ -13,6 +13,8 @@ const DESCRIPTION_MAX_LENGTH = 120;
 interface AddModalProps {
   isOpen: boolean;
   onClose: () => void;
+  defaultType?: TransactionType;
+  defaultDate?: Date;
 }
 
 const TRANSACTION_TYPES: TransactionType[] = ['entrada', 'saida', 'diario', 'economia', 'cartao'];
@@ -33,18 +35,27 @@ const CATEGORY_ICONS: Record<TransactionType, React.ReactNode> = {
   cartao: <CreditCard className="h-5 w-5" />,
 };
 
-export default function AddModal({ isOpen, onClose }: AddModalProps) {
-  const [step, setStep] = useState<'select' | 'form'>('select');
-  const [selectedType, setSelectedType] = useState<TransactionType>('entrada');
+export default function AddModal({
+  isOpen,
+  onClose,
+  defaultType = 'entrada',
+  defaultDate,
+}: AddModalProps) {
+  const [step, setStep] = useState<'select' | 'form'>(defaultType ? 'form' : 'select');
+  const [selectedType, setSelectedType] = useState<TransactionType>(defaultType);
   const [amount, setAmount] = useState('');
   const [description, setDescription] = useState('');
-  const [date, setDate] = useState(new Date().toISOString().split('T')[0]);
+  const [date, setDate] = useState(
+    defaultDate ? defaultDate.toISOString().split('T')[0] : new Date().toISOString().split('T')[0]
+  );
   const [selectedTagIds, setSelectedTagIds] = useState<string[]>([]);
   const [showNewTagForm, setShowNewTagForm] = useState(false);
   const [newTagName, setNewTagName] = useState('');
   const [newTagColor, setNewTagColor] = useState(TAG_COLOR_PRESETS[0]);
   const [recurrence, setRecurrence] = useState<RecurrenceType>('none');
   const [recurrenceEndDate, setRecurrenceEndDate] = useState('');
+  const [recurrenceMode, setRecurrenceMode] = useState<'infinite' | 'count'>('infinite');
+  const [recurrenceCount, setRecurrenceCount] = useState('');
   const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({});
 
   const { addTransaction, tags, addTag } = useFinancasStore();
@@ -52,6 +63,13 @@ export default function AddModal({ isOpen, onClose }: AddModalProps) {
 
   const modalRef = useRef<HTMLDivElement>(null);
   useFocusTrap(modalRef, isOpen, onClose);
+
+  // Sincroniza a data quando defaultDate muda
+  useEffect(() => {
+    if (defaultDate) {
+      setDate(defaultDate.toISOString().split('T')[0]);
+    }
+  }, [defaultDate, isOpen]);
 
   const toggleTag = (tagId: string) => {
     setSelectedTagIds((prev) =>
@@ -129,6 +147,7 @@ export default function AddModal({ isOpen, onClose }: AddModalProps) {
       date: selectedDate,
       recurrence,
       recurrence_end_date: recurrence === 'fixed_until' && recurrenceEndDate ? parseLocalDate(recurrenceEndDate) : undefined,
+      recurrence_count: recurrence !== 'none' && recurrenceMode === 'count' ? parseInt(recurrenceCount) : undefined,
       tag_ids: selectedTagIds,
     });
     onClose();
@@ -139,6 +158,8 @@ export default function AddModal({ isOpen, onClose }: AddModalProps) {
     setShowNewTagForm(false);
     setRecurrence('none');
     setRecurrenceEndDate('');
+    setRecurrenceMode('infinite');
+    setRecurrenceCount('');
     setStep('select');
   };
 
@@ -346,10 +367,53 @@ export default function AddModal({ isOpen, onClose }: AddModalProps) {
                     <option value="fixed_until">Até uma data</option>
                   </select>
 
-                  {recurrence === 'fixed_until' && (
-                    <div className="mt-3">
-                      <label className="text-sm text-gray-400 block mb-2">Até quando?</label>
-                      <DatePicker value={recurrenceEndDate} onChange={setRecurrenceEndDate} />
+                  {recurrence !== 'none' && (
+                    <div className="mt-3 space-y-3">
+                      <div className="space-y-2">
+                        <label className="text-sm text-gray-400 block">Quantas transações?</label>
+                        <div className="flex gap-2">
+                          <button
+                            type="button"
+                            onClick={() => setRecurrenceMode('infinite')}
+                            className={`flex-1 py-2 rounded-lg transition font-medium ${
+                              recurrenceMode === 'infinite'
+                                ? 'bg-entrada text-bg-primary'
+                                : 'bg-card-hover text-gray-400 hover:text-white'
+                            }`}
+                          >
+                            Infinito
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() => setRecurrenceMode('count')}
+                            className={`flex-1 py-2 rounded-lg transition font-medium ${
+                              recurrenceMode === 'count'
+                                ? 'bg-entrada text-bg-primary'
+                                : 'bg-card-hover text-gray-400 hover:text-white'
+                            }`}
+                          >
+                            Número
+                          </button>
+                        </div>
+                      </div>
+
+                      {recurrenceMode === 'count' && (
+                        <input
+                          type="number"
+                          value={recurrenceCount}
+                          onChange={(e) => setRecurrenceCount(e.target.value)}
+                          placeholder="Ex: 10"
+                          min="2"
+                          className="w-full bg-card-hover border border-card-hover/50 rounded-lg px-4 py-2 text-white placeholder-gray-500 focus:outline-none focus:border-entrada"
+                        />
+                      )}
+
+                      {recurrence === 'fixed_until' && (
+                        <div>
+                          <label className="text-sm text-gray-400 block mb-2">Até quando?</label>
+                          <DatePicker value={recurrenceEndDate} onChange={setRecurrenceEndDate} />
+                        </div>
+                      )}
                     </div>
                   )}
                 </div>
