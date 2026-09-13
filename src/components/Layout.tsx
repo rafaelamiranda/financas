@@ -37,8 +37,9 @@ export default function Layout() {
               {!open && (
                 <button
                   onClick={() => setOpen(true)}
-                  className="p-1 hover:bg-card-hover/50 rounded-lg transition"
-                  aria-label="Abrir menu"
+                  className="p-1 hover:bg-card-hover/50 rounded-lg transition focus:outline-none focus:ring-2 focus:ring-entrada/50"
+                  aria-label="Abrir menu lateral"
+                  title="Abrir menu lateral"
                 >
                   <ChevronLeft className="h-5 w-5 text-gray-400" />
                 </button>
@@ -59,18 +60,22 @@ export default function Layout() {
           <div className="flex flex-col gap-2">
             <button
               onClick={() => setShowAddModal(true)}
-              className={`font-bold text-bg-primary bg-entrada hover:bg-entrada/90 transition flex items-center justify-center gap-2 overflow-hidden ${
+              className={`font-bold text-bg-primary bg-entrada hover:bg-entrada/90 transition flex items-center justify-center gap-2 overflow-hidden focus:outline-none focus:ring-2 focus:ring-offset-1 focus:ring-offset-card-dark focus:ring-entrada/50 ${
                 open
                   ? 'w-full py-3 px-2 rounded-full'
                   : 'w-10 h-10 rounded-full flex-shrink-0'
               }`}
+              aria-label="Adicionar nova transação"
+              title="Adicionar nova transação"
             >
               <Plus className="h-5 w-5 flex-shrink-0" />
               {open && <span className="whitespace-pre">adicionar</span>}
             </button>
             <button
               onClick={goToday}
-              className="w-full py-2 px-2 rounded-lg text-sm text-gray-400 hover:text-white hover:bg-card-hover/50 transition flex items-center justify-center gap-2 overflow-hidden"
+              className="w-full py-2 px-2 rounded-lg text-sm text-gray-400 hover:text-white hover:bg-card-hover/50 transition flex items-center justify-center gap-2 overflow-hidden focus:outline-none focus:ring-2 focus:ring-entrada/50"
+              aria-label="Ir para hoje"
+              title="Ir para hoje"
             >
               <CalendarDays className="h-5 w-5 flex-shrink-0" />
               {open && <span className="whitespace-pre">ir pra hoje</span>}
@@ -78,9 +83,9 @@ export default function Layout() {
             {open && (
               <button
                 onClick={() => setOpen(false)}
-                className="w-full py-2 px-2 rounded-lg text-sm text-gray-500 hover:text-gray-400 hover:bg-card-hover/20 transition flex items-center justify-center gap-2 overflow-hidden"
-                title="Fechar sidebar"
-                aria-label="Fechar sidebar"
+                className="w-full py-2 px-2 rounded-lg text-sm text-gray-500 hover:text-gray-400 hover:bg-card-hover/20 transition flex items-center justify-center gap-2 overflow-hidden focus:outline-none focus:ring-2 focus:ring-entrada/50"
+                title="Fechar menu lateral"
+                aria-label="Fechar menu lateral"
               >
                 <X className="h-4 w-4 shrink-0" />
               </button>

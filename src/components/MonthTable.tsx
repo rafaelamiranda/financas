@@ -37,10 +37,11 @@ const CategoryCell = ({
                     e.stopPropagation();
                     onAddClick?.();
                 }}
-                className="flex items-center gap-2 relative hover:opacity-80 transition"
+                className="flex items-center gap-2 relative hover:opacity-80 transition focus:outline-none focus:ring-2 focus:ring-entrada/50 rounded"
                 onMouseEnter={() => setShowAdd(true)}
                 onMouseLeave={() => setShowAdd(false)}
                 title={`Adicionar ${type}`}
+                aria-label={`Adicionar transação ${type}`}
             >
                 <div
                     className="w-6 h-6 rounded-full flex items-center justify-center text-white text-xs font-bold opacity-30 hover:opacity-50 transition"
@@ -70,8 +71,9 @@ const CategoryCell = ({
                             e.stopPropagation();
                             onAddClick?.();
                         }}
-                        className="absolute inset-0 flex items-center justify-center hover:scale-110 transition"
+                        className="absolute inset-0 flex items-center justify-center hover:scale-110 transition focus:outline-none focus:ring-2 focus:ring-entrada/50"
                         title="Adicionar transação"
+                        aria-label={`Adicionar transação ${type}`}
                     >
                         <Plus className="h-3.5 w-3.5" />
                     </button>
