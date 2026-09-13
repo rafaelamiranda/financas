@@ -4,7 +4,7 @@ import { DndContext, closestCenter, PointerSensor, useSensor, useSensors } from 
 import type { DragEndEvent } from '@dnd-kit/core';
 import { SortableContext, verticalListSortingStrategy, useSortable, arrayMove } from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';
-import { GripVertical } from 'lucide-react';
+import { GripVertical, Shuffle } from 'lucide-react';
 import { useFinancasStore } from '../store';
 import { formatCurrency, getMonthName } from '../utils';
 import { TAG_COLOR_PRESETS } from '../types';
@@ -107,12 +107,27 @@ export default function Tags() {
     reorderTags(reordered.map((t) => t.id));
   };
 
+  const handleShuffle = () => {
+    const shuffled = [...sortedTags].sort(() => Math.random() - 0.5);
+    reorderTags(shuffled.map((t) => t.id));
+  };
+
   return (
     <div className="w-full h-full flex flex-col">
       {/* Header */}
       <div className="sticky top-0 md:top-0 bg-card-dark border-b border-card-hover/20 p-4 md:p-6 space-y-4">
         <div className="flex items-center justify-between">
           <h1 className="text-2xl font-bold text-white">tags</h1>
+          <div className="flex items-center gap-2">
+            <button
+              onClick={handleShuffle}
+              className="p-2 text-gray-400 hover:text-white hover:bg-card-hover/50 rounded-lg transition focus:outline-none focus:ring-2 focus:ring-entrada/50"
+              aria-label="Embaralhar ordem das tags"
+              title="Embaralhar ordem das tags"
+            >
+              <Shuffle className="h-5 w-5" />
+            </button>
+          </div>
           <div className="flex items-center gap-2">
             <button
               onClick={handlePrevMonth}
